@@ -5493,6 +5493,9 @@ Platoon = Class(RNGAIPlatoon) {
     end,
     HighlightHero = function(self)
         LOG('starting expansion display')
+        if ScenarioInfo.Options.AIDebugDisplay ~= 'displayOn' then
+            return
+        end
         local aiBrain = self:GetBrain()
         local armyIndex = aiBrain:GetArmyIndex()
         local platoonUnits = GetPlatoonUnits(self)
@@ -5833,6 +5836,9 @@ Platoon = Class(RNGAIPlatoon) {
     end,
     HighlightTrueHero = function(self)
         LOG('starting expansion display')
+        if ScenarioInfo.Options.AIDebugDisplay ~= 'displayOn' then
+            return
+        end
         local aiBrain = self:GetBrain()
         local armyIndex = aiBrain:GetArmyIndex()
         local platoonUnits = GetPlatoonUnits(self)
@@ -6094,7 +6100,9 @@ Platoon = Class(RNGAIPlatoon) {
             platoonUnits = GetPlatoonUnits(self)
             if platoon.navigating then 
                 while platoon.navigating do 
-                    DrawCircle(platoon:GetPlatoonPosition(),5,'FFbb00FF')
+                    if ScenarioInfo.Options.AIDebugDisplay == 'displayOn' then
+                        DrawCircle(platoon:GetPlatoonPosition(),5,'FFbb00FF')
+                    end
                     WaitTicks(2) 
                 end 
             end
@@ -6265,6 +6273,7 @@ Platoon = Class(RNGAIPlatoon) {
                         if RUtils.GrabPosEconRNG(aiBrain,v.Position,20).ally>0 then
                             continue
                         end
+                        if not v.Position then continue end
                         if VDist2Sq(v.Position[1],v.Position[3],platoon.Pos[1],platoon.Pos[3])<100*100 then
                             continue
                         end
@@ -6588,12 +6597,12 @@ Platoon = Class(RNGAIPlatoon) {
                             local tdist=VDist2(targetPosition[1],targetPosition[3],upos[1],upos[3])
                             smartPos = RUtils.lerpy({upos[1]+math.random(-2,2),upos[2],upos[3]+math.random(-2,2)},targetPosition,{tdist,tdist - v.MaxWeaponRange*v:GetHealthPercent()})
                             smartPos = {smartPos[1]+math.random(-1,1),smartPos[2],smartPos[3]+math.random(-1,1)}
-                            strafeshift=RUtils.LerpyRotate(upos,smartPos,{4,math.random(-4,4)})
+                            strafeshift=RUtils.LerpyRotate(upos,smartPos,{4,math.random(-6,6)})
                             IssueClearCommands({v})
                             IssueMove({v},strafeshift)
                             WaitTicks(1)
                         end
-                        WaitTicks(35)
+                        WaitTicks(45)
                     elseif targetDist<platoon.MaxWeaponRange*5 then
                         platoon.dest={targetPosition[1]+math.random(-4,4),targetPosition[2],targetPosition[3]+math.random(-4,4)}
                         self:Stop()
@@ -6618,6 +6627,9 @@ Platoon = Class(RNGAIPlatoon) {
         local platoonUnits = GetPlatoonUnits(self)
         local platoon=self
         platoon.taken=true
+        if ScenarioInfo.Options.AIDebugDisplay ~= 'displayOn' then
+            return
+        end
         while not platoon.dead and PlatoonExists(aiBrain, self) do
                 platoonUnits = GetPlatoonUnits(self)
                 local pos1={0,0,0}
@@ -6720,7 +6732,7 @@ Platoon = Class(RNGAIPlatoon) {
             if not platoon.Pos then WaitTicks(10) continue end
             platoonUnits = GetPlatoonUnits(self)
             platoon.Pos=self:GetPlatoonPosition() 
-            enemyunits=aiBrain:GetUnitsAroundPoint(categories.SELECTABLE,platoon.Pos,platoon.MaxWeaponRange*1.3,'Enemy')
+            enemyunits=aiBrain:GetUnitsAroundPoint(categories.SELECTABLE-categories.WALL,platoon.Pos,platoon.MaxWeaponRange*2,'Enemy')
             for i,v in enemyunits do
                 if v.Dead or not v or not v:GetFractionComplete()==1 then 
                     table.remove(enemyunits,i) 
@@ -6755,6 +6767,7 @@ Platoon = Class(RNGAIPlatoon) {
                                 if not target or target.Dead then continue end
                                 if VDist3Sq(target:GetPosition(),v:GetPosition())>bp.MaxRadius*bp.MaxRadius then continue end
                                 weapon:SetTargetEntity(target)
+                                self:ForkThread(self.ShowUnitWeaponTargetRNG,v,weapon,target)
                                 target.health=target.health-bp.Damage
                                 break
                             end
@@ -6763,6 +6776,7 @@ Platoon = Class(RNGAIPlatoon) {
                                 if not target or target.Dead then continue end
                                 if VDist3Sq(target:GetPosition(),v:GetPosition())>bp.MaxRadius*bp.MaxRadius then continue end
                                 weapon:SetTargetEntity(target)
+                                self:ForkThread(self.ShowUnitWeaponTargetRNG,v,weapon,target)
                                 target.health=target.health-bp.Damage
                                 break
                             end
@@ -6802,6 +6816,7 @@ Platoon = Class(RNGAIPlatoon) {
             local platoonNum=table.getn(platoonUnits)
             local spread=0
             local snum=0
+            local farthestunit=nil
             for _,v in platoonUnits do
                 if not v or v.Dead then continue end
                 if VDist3Sq(v:GetPosition(),platoon.Pos)>platoon.MaxWeaponRange*platoon.MaxWeaponRange*2 then
@@ -6809,7 +6824,13 @@ Platoon = Class(RNGAIPlatoon) {
                     continue
                 end
                 if VDist3Sq(v:GetPosition(),platoon.Pos)>v.MaxWeaponRange/3*v.MaxWeaponRange/3+platoonNum then
-                    if v.dest then
+                    spread=spread+VDist3Sq(v:GetPosition(),platoon.Pos)/v.MaxWeaponRange/v.MaxWeaponRange
+                    snum=snum+1
+                    if not farthestunit or VDist3Sq(v:GetPosition(),platoon.Pos)>VDist3Sq(farthestunit:GetPosition(),platoon.Pos) then
+                        farthestunit=v
+                    end
+                    ---[[
+                    if platoon.dest then
                         IssueClearCommands({v})
                         if v.Sniper then
                             IssueMove({v},RUtils.lerpy(platoon.Pos,platoon.dest,{VDist3(platoon.dest,platoon.Pos),v.MaxWeaponRange/10+math.sqrt(platoonNum)}))
@@ -6821,16 +6842,20 @@ Platoon = Class(RNGAIPlatoon) {
                     else
                         IssueClearCommands({v})
                         if v.Sniper then
-                            IssueMove({v},RUtils.lerpy(platoon.Pos,platoon.home,{VDist3(platoon.home,platoon.Pos),-v.MaxWeaponRange/10-math.sqrt(platoonNum)}))
+                            IssueMove({v},RUtils.lerpy(platoon.Pos,platoon.home,{VDist3(platoon.home,platoon.Pos),v.MaxWeaponRange/10+math.sqrt(platoonNum)}))
                         else
-                            IssueMove({v},RUtils.lerpy(platoon.Pos,platoon.home,{VDist3(platoon.home,platoon.Pos),-v.MaxWeaponRange/6-math.sqrt(platoonNum)}))
+                            IssueMove({v},RUtils.lerpy(platoon.Pos,platoon.home,{VDist3(platoon.home,platoon.Pos),v.MaxWeaponRange/6+math.sqrt(platoonNum)}))
                         end
                         spread=spread+VDist3Sq(v:GetPosition(),platoon.Pos)/v.MaxWeaponRange/v.MaxWeaponRange
                         snum=snum+1
-                    end
+                    end--]]
                 end
             end
-            if spread>0 then
+            if spread>20 and farthestunit then
+                IssueClearCommands(platoonUnits)
+                IssueMove(farthestunit)
+                WaitTicks(math.ceil(math.sqrt(spread+20)*5))
+            elseif spread>0 then
                 WaitTicks(math.ceil(math.sqrt(spread+10)*5))
             end
             platoonUnits = GetPlatoonUnits(self)
@@ -6852,6 +6877,16 @@ Platoon = Class(RNGAIPlatoon) {
             end
             WaitTicks(30)
             continue
+        end
+    end,
+    ShowUnitWeaponTargetRNG = function(self, unit, weapon, target)
+        -- Show a line to the target from the weapon for a short time
+        for _=0,10 do
+            if target and not target.Dead then
+                weapon:SetTargetEntity(target)
+                DrawLinePop(unit:GetPosition(),target:GetPosition(),'ddFF0000')
+            end
+            WaitTicks(2)
         end
     end,
     RemoveSingleUnitRNG = function(self, aiBrain, unit)

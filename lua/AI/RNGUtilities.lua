@@ -2596,6 +2596,9 @@ end
 DisplayEconomyRNG = function(aiBrain)
     WaitTicks(150)
     if ArmyIsCivilian(aiBrain:GetArmyIndex()) then return end
+    if ScenarioInfo.Options.AIDebugDisplay ~= 'displayOn' then
+        return
+    end
     if not aiBrain.locationstart then
         local starts = AIUtils.AIGetMarkerLocations(aiBrain, 'Start Location')
         local astartX, astartZ = aiBrain:GetArmyStartPos()
@@ -2983,11 +2986,12 @@ CountSoonMassSpotsRNG = function(aiBrain)
                     table.remove(markercache,i) 
                     continue 
                 end
-                if aiBrain:GetNumUnitsAroundPoint(categories.MASSEXTRACTION + categories.ENGINEER, v.position, 40, 'Ally')>0 then
+                if aiBrain:GetNumUnitsAroundPoint(categories.MASSEXTRACTION + categories.ENGINEER, v.position, 50*ScenarioInfo.size[1]/256, 'Ally')>0 then
                     unclaimedmexcount=unclaimedmexcount+1
                 end
             end
-            aiBrain.cmanager.unclaimedmexcount=unclaimedmexcount
+            aiBrain.cmanager.unclaimedmexcount=(aiBrain.cmanager.unclaimedmexcount+unclaimedmexcount)/2
+            --LOG(repr(aiBrain.Nickname)..' unclaimedmex='..repr(aiBrain.cmanager.unclaimedmexcount))
             WaitTicks(20)
         end
     end
