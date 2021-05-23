@@ -1,6 +1,7 @@
 WARN('['..string.gsub(debug.getinfo(1).source, ".*\\(.*.lua)", "%1")..', line:'..debug.getinfo(1).currentline..'] * RNGAI: offset aibuildstructures.lua' )
 
 local RUtils = import('/mods/RNGAI/lua/AI/RNGUtilities.lua')
+local AIUtils = import('/lua/ai/aiutilities.lua')
 
 RNGAddToBuildQueue = AddToBuildQueue
 function AddToBuildQueue(aiBrain, builder, whatToBuild, buildLocation, relative)
@@ -74,6 +75,7 @@ function AIExecuteBuildStructureRNG(aiBrain, builder, buildingType, closeToBuild
         -- get the needed tech level to build buildingType
         local BBC = __blueprints[BuildUnitWithID].CategoriesHash
         local NeedTech
+        local HasTech
         if BBC.BUILTBYCOMMANDER or BBC.BUILTBYTIER1COMMANDER or BBC.BUILTBYTIER1ENGINEER then
             NeedTech = 1
         elseif BBC.BUILTBYTIER2COMMANDER or BBC.BUILTBYTIER2ENGINEER then
@@ -112,8 +114,8 @@ function AIExecuteBuildStructureRNG(aiBrain, builder, buildingType, closeToBuild
             SPEW('*AIExecuteBuildStructure: Engineer with Techlevel ('..HasTech..') can build TECH'..NeedTech..' BuildUnitWithID: '..repr(BuildUnitWithID))
         end
 
-        HasFaction = builder.factionCategory
-        NeedFaction = string.upper(__blueprints[string.lower(BuildUnitWithID)].General.FactionName)
+        local HasFaction = builder.factionCategory
+        local NeedFaction = string.upper(__blueprints[string.lower(BuildUnitWithID)].General.FactionName)
         if HasFaction ~= NeedFaction then
             WARN('*AIExecuteBuildStructure: AI-faction: '..AIFactionName..', ('..HasFaction..') engineers can\'t build ('..NeedFaction..') structures!')
             return false
@@ -144,7 +146,150 @@ function AIExecuteBuildStructureRNG(aiBrain, builder, buildingType, closeToBuild
     end
     local location = false
     if IsResource(buildingType) then
-        if buildingType != 'T1HydroCarbon' and constructionData.MexThreat then
+        if buildingType ~= 'T1HydroCarbon' and constructionData.PriorityExpand then
+            if not aiBrain.expansionMex or not aiBrain.expansionMex[1].priority then
+                --initialize expansion priority
+                local starts = AIUtils.AIGetMarkerLocations(aiBrain, 'Start Location')
+                local Expands = AIUtils.AIGetMarkerLocations(aiBrain, 'Expansion Area')
+                local BigExpands = AIUtils.AIGetMarkerLocations(aiBrain, 'Large Expansion Area')
+                if not aiBrain.emanager then aiBrain.emanager={} end
+                aiBrain.emanager.expands = {}
+                for _, v in Expands do
+                    v.expandtype='expand'
+                    v.mexnum=0
+                    v.mextable={}
+                    v.relevance=0
+                    v.owner=nil
+                    table.insert(aiBrain.emanager.expands,v)
+                end
+                for _, v in BigExpands do
+                    v.expandtype='bigexpand'
+                    v.mexnum=0
+                    v.mextable={}
+                    v.relevance=0
+                    v.owner=nil
+                    table.insert(aiBrain.emanager.expands,v)
+                end
+                for _, v in starts do
+                    v.expandtype='start'
+                    v.mexnum=0
+                    v.mextable={}
+                    v.relevance=0
+                    v.owner=nil
+                    table.insert(aiBrain.emanager.expands,v)
+                end
+                local markers = ScenarioUtils.GetMarkers()
+                aiBrain.expansionMex={}
+                local expands={}
+                if markers then
+                    for k, v in markers do
+                        if v.type == 'Mass' then
+                            table.sort(aiBrain.emanager.expands,function(a,b) return VDist2Sq(a.Position[1],a.Position[3],v.position[1],v.position[3])<VDist2Sq(b.Position[1],b.Position[3],v.position[1],v.position[3]) end)
+                            table.insert(aiBrain.expansionMex, {v,Position = v.position, Name = k})
+                            table.insert(aiBrain.emanager.expands[1].mextable,{v,Position = v.position, Name = k})
+                            aiBrain.emanager.expands[1].mexnum=aiBrain.emanager.expands[1].mexnum+1
+                        end
+                    end
+                end
+                for _,v in aiBrain.expansionMex do
+                    table.sort(aiBrain.emanager.expands,function(a,b) return VDist2Sq(a.Position[1],a.Position[3],v.Position[1],v.Position[3])<VDist2Sq(b.Position[1],b.Position[3],v.Position[1],v.Position[3]) end)
+                    v.distsq=VDist2Sq(aiBrain.emanager.expands[1].Position[1],aiBrain.emanager.expands[1].Position[2],v.Position[1],v.Position[3])
+                    v.priority=aiBrain.emanager.expands[1].mexnum/v.distsq
+                    v.expand=aiBrain.emanager.expands[1]
+                    v.expand.taken=0
+                    v.expand.takentime=0
+                end
+            end
+            local markerTable=table.copy(aiBrain.expansionMex)
+            relative = false
+            if not constructionData.MinDistance then
+                constructionData.MinDistance=0
+            end
+            if not constructionData.MaxDistance then
+                constructionData.MaxDistance=9999
+            end
+            table.sort(markerTable,function(a,b) return VDist2Sq(a.Position[1],a.Position[3],relativeTo[1],relativeTo[3])/a.priority/a.priority*a.distsq<VDist2Sq(b.Position[1],b.Position[3],relativeTo[1],relativeTo[3])/b.priority/b.priority*b.distsq end)
+            for i,v in markerTable do
+                if not constructionData.ExpandDist then
+                    if VDist3Sq( v.Position, relativeTo ) <= constructionData.MaxDistance*constructionData.MaxDistance and VDist3Sq( v.Position, relativeTo ) >= constructionData.MinDistance*constructionData.MinDistance then
+                        if aiBrain:CanBuildStructureAt('ueb1103', v.Position) then
+                            if v.expand.taken>0 and v.expand.mexnum/(v.expand.taken+1)<4 then 
+                                if v.expand.takentime+40>GetGameTimeSeconds() then
+                                    continue
+                                elseif v.expand.takentime-60<GetGameTimeSeconds() then
+                                    v.expand.taken=v.expand.taken-2
+                                    v.expand.takentime=GetGameTimeSeconds()
+                                else
+                                    v.expand.takentime=GetGameTimeSeconds()
+                                end
+                            elseif v.expand.taken<1 or v.expand.mexnum/(v.expand.taken+1)>4 then
+                                v.expand.takentime=GetGameTimeSeconds()
+                                --v.expand.taken=v.expand.taken+1
+                            end
+                            LOG('MassPoint found for engineer')
+                            location = table.copy(markerTable[i])
+                            location = {location.Position[1], location.Position[3], location.Position[2]}
+                            v.expand.taken=v.expand.taken+1
+                            LOG('Location is '..repr(location))
+                            break
+                        end
+                    end
+                else
+                    if v.distsq <= constructionData.MaxDistance*constructionData.MaxDistance and VDist3Sq( v.Position, relativeTo ) >= constructionData.MinDistance*constructionData.MinDistance then
+                        if aiBrain:CanBuildStructureAt('ueb1103', v.Position) then
+                            if v.expand.taken>0 and v.expand.mexnum/(v.expand.taken+1)<4 then 
+                                if v.expand.takentime+40>GetGameTimeSeconds() then
+                                    continue
+                                elseif v.expand.takentime-60<GetGameTimeSeconds() then
+                                    v.expand.taken=v.expand.taken-2
+                                    v.expand.takentime=GetGameTimeSeconds()
+                                else
+                                    v.expand.takentime=GetGameTimeSeconds()
+                                end
+                            elseif v.expand.taken<1 or v.expand.mexnum/(v.expand.taken+1)>4 then
+                                v.expand.takentime=GetGameTimeSeconds()
+                                --v.expand.taken=v.expand.taken+1
+                            end
+                            LOG('MassPoint found for engineer')
+                            location = table.copy(markerTable[i])
+                            location = {location.Position[1], location.Position[3], location.Position[2]}
+                            v.expand.taken=v.expand.taken+1
+                            LOG('Location is '..repr(location))
+                            break
+                        end
+                    end
+                end
+            end
+            if not location then
+                if not constructionData.ExpandDist then
+                    for i,v in markerTable do
+                        if VDist3Sq( v.Position, relativeTo ) <= constructionData.MaxDistance*constructionData.MaxDistance and VDist3Sq( v.Position, relativeTo ) >= constructionData.MinDistance*constructionData.MinDistance then
+                            if aiBrain:CanBuildStructureAt('ueb1103', v.Position) then
+                                LOG('MassPoint found for engineer')
+                                location = table.copy(markerTable[i])
+                                location = {location.Position[1], location.Position[3], location.Position[2]}
+                                v.expand.taken=v.expand.taken+1
+                                LOG('Location is '..repr(location))
+                                break
+                            end
+                        end
+                    end
+                else
+                    for i,v in markerTable do
+                        if v.distsq <= constructionData.MaxDistance*constructionData.MaxDistance and VDist3Sq( v.Position, relativeTo ) >= constructionData.MinDistance*constructionData.MinDistance then
+                            if aiBrain:CanBuildStructureAt('ueb1103', v.Position) then
+                                LOG('MassPoint found for engineer')
+                                location = table.copy(markerTable[i])
+                                location = {location.Position[1], location.Position[3], location.Position[2]}
+                                v.expand.taken=v.expand.taken+1
+                                LOG('Location is '..repr(location))
+                                break
+                            end
+                        end
+                    end
+                end
+            end
+        elseif buildingType ~= 'T1HydroCarbon' and constructionData.MexThreat then
             LOG('MexThreat Builder Type')
             local threatMin = -9999
             local threatMax = 9999

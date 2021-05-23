@@ -28,7 +28,7 @@ function CanBuildOnMassEng2(aiBrain, engPos, distance)
                 continue
             end 
             local mexDistance = VDist3Sq( v.position, engPos )
-            if mexDistance < distance and aiBrain:CanBuildStructureAt('ueb1103', v.position) then
+            if mexDistance < distance*distance and aiBrain:CanBuildStructureAt('ueb1103', v.position) then
                 LOG('mexDistance '..mexDistance)
                 table.insert(MassMarker, {Position = v.position, Distance = mexDistance , MassSpot = v})
             end
@@ -135,4 +135,22 @@ function CanBuildOnMassDistanceRNG(aiBrain, locationType, minDistance, maxDistan
     return LastMassBOOL
 end
 
-
+function CanBuildOnMassExpand(aiBrain, locationType, minDistance, maxDistance, threatMin, threatMax, threatRings, threatType, maxNum )
+    local engineerManager = aiBrain.BuilderManagers[locationType].EngineerManager
+    if not engineerManager then
+        --WARN('*AI WARNING: Invalid location - ' .. locationType)
+        return false
+    end
+    local position = {engineerManager.Location[1],GetSurfaceHeight(engineerManager.Location[1],engineerManager.Location[3]),engineerManager.Location[3]}
+    if aiBrain.emanager.expands then
+        local markerTable = table.copy(aiBrain.expansionMex)
+        for _,v in markerTable do
+            if v.distsq<maxDistance*maxDistance and aiBrain:CanBuildStructureAt('ueb1103', v.Position) then
+                return true
+            end
+        end
+    else
+        return false
+    end
+    return false
+end

@@ -3633,10 +3633,10 @@ AIBrain = Class(RNGAIBrainClass) {
             local producem=0
             local producee=0
             if unit:GetFractionComplete()==1 then
-            spendm=GetConsumptionPerSecondMass(unit)
-            spende=GetConsumptionPerSecondEnergy(unit)
-            producem=GetProductionPerSecondMass(unit)
-            producee=GetProductionPerSecondEnergy(unit)
+                spendm=GetConsumptionPerSecondMass(unit)
+                spende=GetConsumptionPerSecondEnergy(unit)
+                producem=GetProductionPerSecondMass(unit)
+                producee=GetProductionPerSecondEnergy(unit)
                 tspend.m=tspend.m+spendm
                 tspend.e=tspend.e+spende
                 rincome.m=rincome.m+producem

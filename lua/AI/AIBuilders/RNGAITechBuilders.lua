@@ -43,13 +43,13 @@ BuilderGroup {
         BuilderConditions = {
             { MIBC, 'GreaterThanGameTimeRNG', { 130 } },
             { UCBC, 'CheckBuildPlatoonDelayRNG', { 'Factories' }},
-            { EBC, 'FutureProofEspendRNG', { 0.5, 'greater' }},
+            { EBC, 'FutureProofEspendRNG', { 0.3, 'greater' }},
             { EBC, 'GreaterThanEconStorageCurrentRNG', { -3, 500 } },
-            { EBC, 'FactorySpendRatioRNG', {'Land', 0.7} },
+            { EBC, 'FutureProofFactorySpendRatioRNG', {'Land', 0.5} },
             { UCBC, 'HaveLessThanUnitsInCategoryBeingBuiltRNG', { 1, categories.FACTORY * categories.LAND } },
             --{ EBC, 'GreaterThanEconStorageCurrentRNG', { 105, 1050 } },
             { EBC, 'MassToFactoryRatioBaseCheckRNG', { 'LocationType' } },
-            { UCBC, 'FactoryLessAtLocationRNG', { 'LocationType', 1, categories.FACTORY * categories.LAND * (categories.TECH2 + categories.TECH3) - categories.SUPPORTFACTORY }},
+            { UCBC, 'HaveLessThanUnitsWithCategory', { 4, categories.LAND * categories.FACTORY * categories.SUPPORTFACTORY}},
             },
         BuilderType = 'Any',
         BuilderData = {
@@ -72,12 +72,42 @@ BuilderGroup {
         InstanceCount = 2,
         BuilderConditions = {
             { UCBC, 'CheckBuildPlatoonDelayRNG', { 'Factories' }},
-            { EBC, 'FactorySpendRatioRNG', {'Land', 0.5} },
-            { EBC, 'FutureProofEspendRNG', { 0.9, 'greater' }},
+            { EBC, 'FutureProofFactorySpendRatioRNG', {'Land', 0.5} },
+            { EBC, 'FutureProofEspendRNG', { 0.3, 'greater' }},
             { EBC, 'GreaterThanEconStorageCurrentRNG', { -3, 500 } },
             { UCBC, 'HaveLessThanUnitsInCategoryBeingBuiltRNG', { 3, categories.FACTORY * categories.LAND } },
             { EBC, 'GreaterThanEconEfficiencyOverTimeRNG', { 1.1, 1.0 }},
             { EBC, 'MassToFactoryRatioBaseCheckRNG', { 'LocationType' } },
+            { UCBC, 'HaveLessThanUnitsWithCategory', { 4, categories.LAND * categories.FACTORY * categories.SUPPORTFACTORY}},
+            },
+        BuilderType = 'Any',
+        BuilderData = {
+            Construction = {
+                Location = 'LocationType',
+                BuildClose = false,
+                AdjacencyCategory = categories.ENERGYPRODUCTION + categories.FACTORY - categories.AIR,
+                BuildStructures = {
+                    'T1LandFactory',
+                },
+            }
+        }
+    },
+    Builder {
+        BuilderName = 'RNG Tech Factory Builder Land T1 Heavy Scaler',
+        PlatoonTemplate = 'EngineerBuilderRNG',
+        Priority = 941,
+        DelayEqualBuildPlattons = {'Factories', 3},
+        InstanceCount = 7,
+        BuilderConditions = {
+            --{ UCBC, 'CheckBuildPlatoonDelayRNG', { 'Factories' }},
+            { EBC, 'FutureProofFactorySpendRatioRNG', {'Land', 0.4} },
+            { EBC, 'FutureProofEspendRNG', { 0.2, 'greater' }},
+            { EBC, 'GreaterThanEconStorageCurrentRNG', { -3, 500 } },
+            { UCBC, 'HaveLessThanUnitsInCategoryBeingBuiltRNG', { 8, categories.FACTORY * categories.LAND } },
+            { EBC, 'GreaterThanEconEfficiencyOverTimeRNG', { 1.0, 0.8 }},
+            { EBC, 'MassToFactoryRatioBaseCheckRNG', { 'LocationType' } },
+            { UCBC, 'HaveLessThanUnitsWithCategory', { 3, categories.TECH3 * categories.LAND * categories.FACTORY * categories.SUPPORTFACTORY}},
+            { UCBC, 'HaveLessThanUnitsWithCategory', { 8, categories.LAND * categories.FACTORY * categories.SUPPORTFACTORY}},
             },
         BuilderType = 'Any',
         BuilderData = {
@@ -141,7 +171,7 @@ BuilderGroup {
             Construction = {
                 Location = 'LocationType',
                 BuildClose = false,
-                AdjacencyCategory = categories.ENERGYPRODUCTION,
+                AdjacencyCategory = categories.ENERGYPRODUCTION + categories.FACTORY - categories.AIR,
                 BuildStructures = {
                     'T2SupportLandFactory',
                 },
@@ -158,13 +188,38 @@ BuilderGroup {
             { EBC, 'MassToFactoryRatioBaseCheck', { 'LocationType' } },
             { UCBC, 'CheckBuildPlatoonDelayRNG', { 'Factories' }},
             { MIBC, 'CanPathToCurrentEnemyRNG', { 'LocationType', true } },
-            { EBC, 'GreaterThanEconEfficiencyOverTimeRNG', { 0.8, 1.0 }},         },
+            { EBC, 'GreaterThanEconEfficiencyOverTimeRNG', { 0.8, 1.0 }}, 
+        },
         BuilderType = 'Any',
         BuilderData = {
             Construction = {
                 Location = 'LocationType',
                 BuildClose = false,
-                AdjacencyCategory = categories.ENERGYPRODUCTION,
+                AdjacencyCategory = categories.ENERGYPRODUCTION + categories.FACTORY - categories.AIR,
+                BuildStructures = {
+                    'T3SupportLandFactory',
+                },
+            }
+        }
+    },
+    Builder {
+        BuilderName = 'RNG Tech Factory Builder Land T3 Heavy Scaler',
+        PlatoonTemplate = 'T3EngineerBuilderRNG',
+        Priority = 1002,
+        DelayEqualBuildPlattons = {'Factories', 10},
+        InstanceCount = 3,
+        BuilderConditions = {
+            { EBC, 'MassToFactoryRatioBaseCheck', { 'LocationType' } },
+            { UCBC, 'CheckBuildPlatoonDelayRNG', { 'Factories' }},
+            { MIBC, 'CanPathToCurrentEnemyRNG', { 'LocationType', true } },
+            { EBC, 'FutureProofFactorySpendRatioRNG', {'Land', 0.6} },
+        },
+        BuilderType = 'Any',
+        BuilderData = {
+            Construction = {
+                Location = 'LocationType',
+                BuildClose = false,
+                AdjacencyCategory = categories.ENERGYPRODUCTION + categories.FACTORY - categories.AIR,
                 BuildStructures = {
                     'T3SupportLandFactory',
                 },
@@ -181,6 +236,7 @@ BuilderGroup {
                 { UCBC, 'HaveGreaterThanUnitsInCategoryBeingBuiltAtLocationRNG', { 'LocationType', 0, categories.STRUCTURE * categories.FACTORY * categories.LAND * categories.SUPPORTFACTORY}},
                 { EBC, 'GreaterThanEconEfficiencyRNG', { 0.9, 1.0 }},
                 { EBC, 'FactorySpendRatioRNG', {'Land', 0.6} },
+                { EBC, 'FutureProofEspendRNG', { 0.4, 'greater' }},
                 { EBC, 'GreaterThanEconStorageCurrentRNG', { -3, 500 } },
             },
         BuilderData = {
@@ -204,6 +260,7 @@ BuilderGroup {
         BuilderConditions = {
                 { EBC, 'GreaterThanEconIncomeRNG',  { 20.0, 200.0}},
                 { EBC, 'FactorySpendRatioRNG', {'Land', 0.8} },
+                { EBC, 'FutureProofEspendRNG', { 0.3, 'greater' }},
                 { UCBC, 'HaveGreaterThanUnitsInCategoryBeingBuiltAtLocationRNG', { 'LocationType', 0, categories.STRUCTURE * categories.FACTORY * categories.LAND * categories.SUPPORTFACTORY}},
                 { EBC, 'GreaterThanEconEfficiencyRNG', { 0.9, 1.0 }},
                 { EBC, 'GreaterThanEconStorageCurrentRNG', { -3, 500 } },
@@ -229,6 +286,7 @@ BuilderGroup {
         BuilderConditions = {
                 { UCBC, 'CheckBuildPlatoonDelayRNG', { 'EngineerAssistUnfinishedF' }},
                 { EBC, 'FactorySpendRatioRNG', {'Land', 0.6} },
+                { EBC, 'FutureProofEspendRNG', { 0.3, 'greater' }},
                 { MIBC, 'GreaterThanGameTimeRNG', { 200 } },
                 { UCBC, 'HaveGreaterThanUnitsInCategoryBeingBuiltAtLocationRNG', { 'LocationType', 0, categories.STRUCTURE * categories.FACTORY * categories.LAND * categories.TECH1}},
                 { EBC, 'GreaterThanEconEfficiencyOverTimeRNG', { 0.80, 0.80 }},
@@ -247,6 +305,33 @@ BuilderGroup {
         BuilderType = 'Any',
     },
     Builder {
+        BuilderName = 'RNG Tech Engineer Mass Assist Factory',
+        PlatoonTemplate = 'T1EngineerAssistRNG',
+        Priority = 1013,
+        DelayEqualBuildPlattons = {'EngineerAssistUnfinishedM', 1},
+        InstanceCount = 15,
+        BuilderConditions = {
+                { UCBC, 'CheckBuildPlatoonDelayRNG', { 'EngineerAssistUnfinishedM' }},
+                { EBC, 'FactorySpendRatioRNG', {'Land', 0.8} },
+                { EBC, 'FutureProofEspendRNG', { 0.3, 'greater' }},
+                { MIBC, 'GreaterThanGameTimeRNG', { 200 } },
+                { UCBC, 'HaveGreaterThanUnitsInCategoryBeingBuiltAtLocationRNG', { 'LocationType', 3, categories.STRUCTURE * categories.FACTORY * categories.LAND}},
+                { EBC, 'GreaterThanEconEfficiencyOverTimeRNG', { 0.80, 0.80 }},
+                { EBC, 'GreaterThanEconStorageCurrentRNG', { -3, 500 } },
+            },
+        BuilderData = {
+            Assist = {
+                AssistUntilFinished = true,
+                AssistLocation = 'LocationType',
+                AssisteeType = categories.STRUCTURE,
+                AssistRange = 100,
+                BeingBuiltCategories = {categories.STRUCTURE * categories.FACTORY * categories.LAND},
+                AssistClosestUnit = true,
+            },
+        },
+        BuilderType = 'Any',
+    },
+    Builder {
         BuilderName = 'RNG Tech Engineer Early Unfinished Factory',
         PlatoonTemplate = 'T1EngineerFinishRNG',
         Priority = 1015,
@@ -255,6 +340,7 @@ BuilderGroup {
         BuilderConditions = {
                 { UCBC, 'CheckBuildPlatoonDelayRNG', { 'EngineerAssistUnfinishedF' }},
                 { EBC, 'FactorySpendRatioRNG', {'Land', 0.9} },
+                { EBC, 'FutureProofEspendRNG', { 0.3, 'greater' }},
                 { MIBC, 'GreaterThanGameTimeRNG', { 200 } },
                 { UCBC, 'UnfinishedUnits', { 'LocationType', categories.FACTORY * categories.STRUCTURE  * categories.LAND * categories.TECH1 }},
                 { EBC, 'GreaterThanEconEfficiencyOverTimeRNG', { 0.80, 0.80 }},
@@ -389,6 +475,7 @@ BuilderGroup {
         BuilderConditions = {
                 { UCBC, 'HaveLessThanUnitsWithCategory', { 1, categories.STRUCTURE * categories.FACTORY * categories.LAND * (categories.TECH2 + categories.TECH3) - categories.SUPPORTFACTORY } },
                 { EBC, 'GreaterThanEconIncomeRNG',  { 5.0, 30.0}},
+                { EBC, 'FutureProofEspendRNG', { 0.9, 'greater' }},
                 { EBC, 'GreaterThanEconEfficiencyRNG', { 0.8, 1.0 }},
                 { UCBC, 'HaveLessThanUnitsInCategoryBeingUpgradedRNG', { 1, categories.STRUCTURE * categories.FACTORY * categories.LAND * categories.TECH1 }},
                 { EBC, 'GreaterThanEconTrendOverTimeRNG', { 0.0, 0.0 } },
@@ -404,6 +491,7 @@ BuilderGroup {
                 { UCBC, 'HaveLessThanUnitsWithCategory', { 1, categories.STRUCTURE * categories.FACTORY * categories.LAND * (categories.TECH2 + categories.TECH3) - categories.SUPPORTFACTORY } },
                 { UCBC, 'EnemyHasUnitOfCategoryRNG', { categories.STRUCTURE * categories.FACTORY * categories.LAND * categories.TECH2}},
                 { EBC, 'GreaterThanEconIncomeRNG',  { 4.0, 30.0}},
+                { EBC, 'FutureProofEspendRNG', { 0.9, 'greater' }},
                 { UCBC, 'HaveLessThanUnitsInCategoryBeingUpgradedRNG', { 1, categories.STRUCTURE * categories.FACTORY * categories.LAND * categories.TECH1 }},
                 { EBC, 'GreaterThanEconTrendOverTimeRNG', { 0.0, 0.0 } },
                 { EBC, 'GreaterThanEconEfficiencyRNG', { 0.8, 1.0 }},
@@ -419,6 +507,7 @@ BuilderGroup {
                 { UCBC, 'HaveLessThanUnitsWithCategory', { 1, categories.STRUCTURE * categories.FACTORY * categories.LAND * (categories.TECH2 + categories.TECH3) - categories.SUPPORTFACTORY } },
                 { UCBC, 'HaveLessThanUnitsInCategoryBeingUpgradedRNG', { 1, categories.STRUCTURE * categories.FACTORY * categories.LAND * categories.TECH1 }},
                 { EBC, 'GreaterThanEconTrendOverTimeRNG', { 0.0, 0.0 } },
+                { EBC, 'FutureProofEspendRNG', { 0.9, 'greater' }},
                 { EBC, 'GreaterThanEconStorageCurrentRNG', { 1600, 4000 } },
             },
         BuilderType = 'Any',
@@ -710,7 +799,6 @@ BuilderGroup {
             { MIBC, 'GreaterThanGameTimeRNG', { 90 } },
             { EBC, 'FutureProofEspendRNG', { 1.0 }},
             { EBC, 'GreaterThanEconEfficiencyRNG', { 0.6, 0.1 }},
-            { EBC, 'LessThanEconStorageRatio', { 2.0, 0.8}},
             { UCBC, 'HaveGreaterThanUnitsInCategoryBeingBuiltAtLocationRNG', { 'LocationType', 0, categories.STRUCTURE * categories.ENERGYPRODUCTION}},
             },
         BuilderData = {

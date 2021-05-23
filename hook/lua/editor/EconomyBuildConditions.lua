@@ -212,7 +212,7 @@ function MassToFactoryRatioBaseCheckRNG(aiBrain, locationType)
     return GreaterThanMassIncomeToFactoryRNG(aiBrain, t1, t2, t3)
 end
 
-function FactorySpendRatioRNG(aiBrain,uType,ratio,greater)
+--[[function FactorySpendRatioRNG(aiBrain,uType,ratio,greater)
     if not greater or greater~='greater' then
         if aiBrain.cmanager.categoryspend.fac[uType]/aiBrain.cmanager.income.r.m+math.random(-15,15)/200<ratio then
             return true
@@ -226,7 +226,7 @@ function FactorySpendRatioRNG(aiBrain,uType,ratio,greater)
             return false
         end
     end
-end
+end]]
 function FutureProofEspendRNG(aiBrain,ratio,greater)
     if not aiBrain.cmanager.income.neede then return false end
     if not greater or greater~='greater' then
@@ -281,6 +281,22 @@ function FactorySpendRatioRNG(aiBrain,uType,ratio,greater)
         end
     else
         if aiBrain.fmanager.buildpower[uType]/aiBrain.cmanager.income.r.m>ratio then
+            return true
+        else
+            return false
+        end
+    end
+end
+function FutureProofFactorySpendRatioRNG(aiBrain,uType,ratio,greater)
+    if not aiBrain.fmanager.buildpower then return false end
+    if not greater or greater~='greater' then
+        if aiBrain.fmanager.buildpower[uType]/(aiBrain.cmanager.income.r.m+2*aiBrain.cmanager.unclaimedmexcount)<ratio then
+            return true
+        else
+            return false
+        end
+    else
+        if aiBrain.fmanager.buildpower[uType]/(aiBrain.cmanager.income.r.m+2*aiBrain.cmanager.unclaimedmexcount)>ratio then
             return true
         else
             return false

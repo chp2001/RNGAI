@@ -2676,6 +2676,16 @@ DisplayEconomyRNG = function(aiBrain)
             RenderBarRNG(aiBrain,home,spende/widthe,widthe,1.5+3*widthm+2*widthe,'ffFF5900')
             RenderBarRNG(aiBrain,home,-storemaxe/3/widthe,3*widthe,1.5+3*widthm,'ffFFD800')
             RenderBarRNG(aiBrain,home,-storee/3/widthe,3*widthe,1.5+3*widthm,'ffFFFF00')
+            if aiBrain.emanager.expands then
+                for _,v in aiBrain.emanager.expands do
+                    if v.taken>1 then
+                        DrawCircle(v.Position,4,'FF0000FF')
+                        for _,x in v.mextable do
+                            DrawLinePop(v.Position,x.Position,'880000FF')
+                        end
+                    end
+                end
+            end
             WaitTicks(2)
         end
     end
