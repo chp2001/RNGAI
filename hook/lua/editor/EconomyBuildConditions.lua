@@ -4,7 +4,7 @@
     Summary :
         Economy Build Conditions
 ]]
-
+WARN('['..string.gsub(debug.getinfo(1).source, ".*\\(.*.lua)", "%1")..', line:'..debug.getinfo(1).currentline..'] * RNGAI: offset EconomyBuildConditions.lua' )
 local GetEconomyTrend = moho.aibrain_methods.GetEconomyTrend
 local GetEconomyStoredRatio = moho.aibrain_methods.GetEconomyStoredRatio
 local GetEconomyIncome = moho.aibrain_methods.GetEconomyIncome
@@ -313,6 +313,22 @@ function FactorySpendRatioUnitRNG(aiBrain,uType,ratio,greater)
         end
     else
         if aiBrain.fmanager.buildpower[uType]/aiBrain.cmanager.income.r.m>ratio then
+            return true
+        else
+            return false
+        end
+    end
+end
+function FutureProofFactoryUpgradeSpendRatioRNG(aiBrain,uType,ratio,greater)
+    if not aiBrain.fmanager.uspend then return false end
+    if not greater or greater~='greater' then
+        if aiBrain.fmanager.uspend[uType]/(aiBrain.cmanager.income.r.m+2*aiBrain.cmanager.unclaimedmexcount)<ratio then
+            return true
+        else
+            return false
+        end
+    else
+        if aiBrain.fmanager.uspend[uType]/(aiBrain.cmanager.income.r.m+2*aiBrain.cmanager.unclaimedmexcount)>ratio then
             return true
         else
             return false

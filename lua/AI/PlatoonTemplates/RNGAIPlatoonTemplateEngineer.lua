@@ -85,6 +85,13 @@ PlatoonTemplate {
         { categories.ENGINEER * categories.TECH1 - categories.COMMAND , 1, 1, 'support', 'None' }
     },
 }
+PlatoonTemplate {
+    Name = 'MexEngineerBuilderRNG',
+    Plan = 'MexBuildAIRNG',
+    GlobalSquads = {
+        { categories.ENGINEER * categories.TECH1 - categories.COMMAND , 1, 1, 'support', 'None' }
+    },
+}
 
 PlatoonTemplate {
     Name = 'EngineerBuilderT123RNG',

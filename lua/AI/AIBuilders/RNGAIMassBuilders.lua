@@ -15,8 +15,7 @@ BuilderGroup {
     BuildersType = 'EngineerBuilder',
     Builder {
         BuilderName = 'RNGAI T1Engineer Mass 30',
-        PlatoonTemplate = 'EngineerBuilderRNG',
-        PlatoonAIPlan = 'MexBuildAIRNG',
+        PlatoonTemplate = 'MexEngineerBuilderRNG',
         Priority = 998,
         InstanceCount = 2,
         BuilderConditions = { 
@@ -31,7 +30,7 @@ BuilderGroup {
                 ThreatMin = -500,
                 ThreatMax = 5,
                 ThreatType = 'AntiSurface',
-                PriorityExpand = true,
+                --PriorityExpand = true,
                 BuildStructures = {
                     'T1Resource',
                 },
@@ -40,8 +39,7 @@ BuilderGroup {
     },
     Builder {
         BuilderName = 'RNGAI T1Engineer Mass 60',
-        PlatoonTemplate = 'EngineerBuilderRNG',
-        PlatoonAIPlan = 'MexBuildAIRNG',
+        PlatoonTemplate = 'MexEngineerBuilderRNG',
         Priority = 950,
         InstanceCount = 4,
         BuilderConditions = { 
@@ -56,7 +54,7 @@ BuilderGroup {
                 ThreatMin = -500,
                 ThreatMax = 0,
                 ThreatType = 'AntiSurface',
-                PriorityExpand = true,
+                --PriorityExpand = true,
                 BuildStructures = {
                     'T1Resource',
                 },
@@ -65,8 +63,7 @@ BuilderGroup {
     },
     Builder {
         BuilderName = 'RNGAI T1Engineer Mass 120',
-        PlatoonTemplate = 'EngineerBuilderRNG',
-        PlatoonAIPlan = 'MexBuildAIRNG',
+        PlatoonTemplate = 'MexEngineerBuilderRNG',
         Priority = 995,
         InstanceCount = 4,
         BuilderConditions = { 
@@ -82,7 +79,7 @@ BuilderGroup {
                 ThreatMin = -500,
                 ThreatMax = 0,
                 ThreatType = 'AntiSurface',
-                PriorityExpand = true,
+                --PriorityExpand = true,
                 BuildStructures = {
                     'T1Resource',
                 },
@@ -92,7 +89,6 @@ BuilderGroup {
     Builder {
         BuilderName = 'RNGAI T2Engineer Mass 120',
         PlatoonTemplate = 'T23EngineerBuilderRNG',
-        PlatoonAIPlan = 'MexBuildAIRNG',
         Priority = 650,
         InstanceCount = 1,
         BuilderConditions = { 
@@ -116,8 +112,7 @@ BuilderGroup {
     },
     Builder {
         BuilderName = 'RNGAI T1Engineer Mass 200',
-        PlatoonTemplate = 'EngineerBuilderRNG',
-        PlatoonAIPlan = 'MexBuildAIRNG',
+        PlatoonTemplate = 'MexEngineerBuilderRNG',
         Priority = 997,
         InstanceCount = 1,
         BuilderConditions = { 
@@ -145,8 +140,7 @@ BuilderGroup {
     },
     Builder {
         BuilderName = 'RNGAI T1Engineer Mass 240',
-        PlatoonTemplate = 'EngineerBuilderRNG',
-        PlatoonAIPlan = 'MexBuildAIRNG',
+        PlatoonTemplate = 'MexEngineerBuilderRNG',
         Priority = 800,
         InstanceCount = 4,
         BuilderConditions = { 
@@ -174,8 +168,7 @@ BuilderGroup {
 
     Builder {
         BuilderName = 'RNGAI T1Engineer Mass 480',
-        PlatoonTemplate = 'EngineerBuilderRNG',
-        PlatoonAIPlan = 'MexBuildAIRNG',
+        PlatoonTemplate = 'MexEngineerBuilderRNG',
         Priority = 700,
         InstanceCount = 5,
         BuilderConditions = { 
@@ -205,8 +198,7 @@ BuilderGroup {
 
     Builder {
         BuilderName = 'RNGAI T1Engineer Mass 2000',
-        PlatoonTemplate = 'EngineerBuilderRNG',
-        PlatoonAIPlan = 'MexBuildAIRNG',
+        PlatoonTemplate = 'MexEngineerBuilderRNG',
         Priority = 300,
         InstanceCount = 5,
         BuilderConditions = { 
@@ -234,16 +226,16 @@ BuilderGroup {
     },
     Builder {
         BuilderName = 'RNGAI T1Engineer Mass Close',
-        PlatoonTemplate = 'EngineerBuilderRNG',
-        PlatoonAIPlan = 'MexBuildAIRNG',
-        Priority = 800,
+        PlatoonTemplate = 'MexEngineerBuilderRNG',
+        Priority = 957,
         InstanceCount = 5,
         DelayEqualBuildPlattons = {'MassClose', 10},
         BuilderConditions = { 
             { MIBC, 'GreaterThanGameTimeRNG', { 70 } },
-            { MABC, 'CanBuildOnMassExpand', { 'LocationType', 0, 500, -500, 2, 0, 'AntiSurface', 1}},
+            --{ MABC, 'CanBuildOnMassExpand', { 'LocationType', 0, 500, -500, 2, 0, 'AntiSurface', 1}},
             { UCBC, 'CheckBuildPlatoonDelayRNG', { 'MassClose' }},
             { EBC, 'MexesToBeClaimedRNG', { 5 } },
+            { EBC, 'CoinFlipRNG', { 0.3 }},
         },
         BuilderType = 'Any',
         BuilderData = {
@@ -252,12 +244,11 @@ BuilderGroup {
             Construction = {
                 RepeatBuild = true,
                 MexThreat = true,
-                MaxDistance = 300,
+                MaxDistance = 500,
                 ThreatMin = -500,
                 ThreatMax = 4,
                 ThreatType = 'AntiSurface',
-                PriorityExpand = true,
-                ExpandDist = true,
+                TakeClose = true,
                 BuildStructures = {
                     'T1Resource',
                 },

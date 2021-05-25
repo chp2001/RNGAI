@@ -2676,14 +2676,9 @@ DisplayEconomyRNG = function(aiBrain)
             RenderBarRNG(aiBrain,home,spende/widthe,widthe,1.5+3*widthm+2*widthe,'ffFF5900')
             RenderBarRNG(aiBrain,home,-storemaxe/3/widthe,3*widthe,1.5+3*widthm,'ffFFD800')
             RenderBarRNG(aiBrain,home,-storee/3/widthe,3*widthe,1.5+3*widthm,'ffFFFF00')
-            if aiBrain.emanager.expands then
-                for _,v in aiBrain.emanager.expands do
-                    if v.taken>1 then
-                        DrawCircle(v.Position,4,'FF0000FF')
-                        for _,x in v.mextable do
-                            DrawLinePop(v.Position,x.Position,'880000FF')
-                        end
-                    end
+            if aiBrain.cmanager.soonmexes and not true then
+                for _,v in aiBrain.cmanager.soonmexes do
+                    DrawLinePop(home,v.Position,'a80000FF')
                 end
             end
             WaitTicks(2)
@@ -2975,7 +2970,80 @@ ExpansionDangerCheckRNG = function(aiBrain)
     end
 end
 CountSoonMassSpotsRNG = function(aiBrain)
+    local enemies={}
+    for i,v in ArmyBrains do
+        if ArmyIsCivilian(v:GetArmyIndex()) or not IsEnemy(aiBrain:GetArmyIndex(),v:GetArmyIndex()) or v.Result=="defeat" then continue end
+        local index = v:GetArmyIndex()
+        local astartX, astartZ = v:GetArmyStartPos()
+        local aiBrainstart = {Position={astartX, GetTerrainHeight(astartX, astartZ), astartZ},army=i}
+        table.insert(enemies,aiBrainstart)
+    end
+    local startX, startZ = aiBrain:GetArmyStartPos()
+    table.sort(enemies,function(a,b) return VDist2Sq(a.Position[1],a.Position[3],startX,startZ)<VDist2Sq(b.Position[1],b.Position[3],startX,startZ) end)
     while not aiBrain.cmanager do WaitTicks(20) end
+    if not aiBrain.expansionMex or not aiBrain.expansionMex[1].priority then
+        --initialize expansion priority
+        local starts = AIUtils.AIGetMarkerLocations(aiBrain, 'Start Location')
+        local Expands = AIUtils.AIGetMarkerLocations(aiBrain, 'Expansion Area')
+        local BigExpands = AIUtils.AIGetMarkerLocations(aiBrain, 'Large Expansion Area')
+        if not aiBrain.emanager then aiBrain.emanager={} end
+        aiBrain.emanager.expands = {}
+        aiBrain.emanager.enemies=enemies
+        aiBrain.emanager.enemy=enemies[1]
+        for _, v in Expands do
+            v.expandtype='expand'
+            v.mexnum=0
+            v.mextable={}
+            v.relevance=0
+            v.owner=nil
+            table.insert(aiBrain.emanager.expands,v)
+        end
+        for _, v in BigExpands do
+            v.expandtype='bigexpand'
+            v.mexnum=0
+            v.mextable={}
+            v.relevance=0
+            v.owner=nil
+            table.insert(aiBrain.emanager.expands,v)
+        end
+        for _, v in starts do
+            v.expandtype='start'
+            v.mexnum=0
+            v.mextable={}
+            v.relevance=0
+            v.owner=nil
+            table.insert(aiBrain.emanager.expands,v)
+        end
+        local markers = ScenarioUtils.GetMarkers()
+        aiBrain.expansionMex={}
+        local expands={}
+        if markers then
+            for k, v in markers do
+                if v.type == 'Mass' then
+                    table.sort(aiBrain.emanager.expands,function(a,b) return VDist2Sq(a.Position[1],a.Position[3],v.position[1],v.position[3])<VDist2Sq(b.Position[1],b.Position[3],v.position[1],v.position[3]) end)
+                    if VDist3Sq(aiBrain.emanager.expands[1].Position,v.position)<25*25 then
+                        table.insert(aiBrain.emanager.expands[1].mextable,{v,Position = v.position, Name = k})
+                        aiBrain.emanager.expands[1].mexnum=aiBrain.emanager.expands[1].mexnum+1
+                        table.insert(aiBrain.expansionMex, {v,Position = v.position, Name = k,ExpandMex=true})
+                    else
+                        table.insert(aiBrain.expansionMex, {v,Position = v.position, Name = k})
+                    end
+                end
+            end
+        end
+        for _,v in aiBrain.expansionMex do
+            table.sort(aiBrain.emanager.expands,function(a,b) return VDist2Sq(a.Position[1],a.Position[3],v.Position[1],v.Position[3])<VDist2Sq(b.Position[1],b.Position[3],v.Position[1],v.Position[3]) end)
+            v.distsq=VDist2Sq(aiBrain.emanager.expands[1].Position[1],aiBrain.emanager.expands[1].Position[2],v.Position[1],v.Position[3])
+            if v.ExpandMex then
+                v.priority=aiBrain.emanager.expands[1].mexnum
+                v.expand=aiBrain.emanager.expands[1]
+                v.expand.taken=0
+                v.expand.takentime=0
+            else
+                v.priority=1
+            end
+        end
+    end
     aiBrain.cmanager.unclaimedmexcount=0
     local massmarkers={}
         for _, v in Scenario.MasterChain._MASTERCHAIN_.Markers do
@@ -2989,6 +3057,7 @@ CountSoonMassSpotsRNG = function(aiBrain)
         end
     while aiBrain.Result ~= "defeat" do
         local markercache=table.copy(massmarkers)
+        local soonmexes={}
         for _=0,10 do
             local unclaimedmexcount=0
             for i,v in markercache do
@@ -2998,19 +3067,22 @@ CountSoonMassSpotsRNG = function(aiBrain)
                 end
                 if aiBrain:GetNumUnitsAroundPoint(categories.MASSEXTRACTION + categories.ENGINEER, v.position, 50*ScenarioInfo.size[1]/256, 'Ally')>0 then
                     unclaimedmexcount=unclaimedmexcount+1
+                    table.insert(soonmexes,{Position = v.position, Name = i})
                 end
             end
             aiBrain.cmanager.unclaimedmexcount=(aiBrain.cmanager.unclaimedmexcount+unclaimedmexcount)/2
+            aiBrain.emanager.soonmexes=soonmexes
             --LOG(repr(aiBrain.Nickname)..' unclaimedmex='..repr(aiBrain.cmanager.unclaimedmexcount))
             WaitTicks(20)
         end
     end
 end
 GetAvgSpendPerFactoryTypeRNG = function(aiBrain)
-    aiBrain.fmanager={spend={Land={T1=0,T2=0,T3=0,total=0},Air={T1=0,T2=0,T3=0,total=0},Naval={T1=0,T2=0,T3=0,total=0}}}
+    aiBrain.fmanager={spend={Land={T1=0,T2=0,T3=0,total=0,},Air={T1=0,T2=0,T3=0,total=0},Naval={T1=0,T2=0,T3=0,total=0}},uspend={Land=0,Air=0,Naval=0}}
     while aiBrain.Result ~= "defeat" do
-        local fmanager={spend={Land={T1=0,T2=0,T3=0,total=0},Air={T1=0,T2=0,T3=0,total=0},Naval={T1=0,T2=0,T3=0,total=0}}}
+        local fmanager={spend={Land={T1=0,T2=0,T3=0,total=0},Air={T1=0,T2=0,T3=0,total=0},Naval={T1=0,T2=0,T3=0,total=0}},uspend={Land=0,Air=0,Naval=0}}
         local fcount={Land={T1=0,T2=0,T3=0,total=0},Air={T1=0,T2=0,T3=0,total=0},Naval={T1=0,T2=0,T3=0,total=0}}
+        local ucount={Land=0,Air=0,Naval=0}
         local factories=aiBrain:GetListOfUnits(categories.FACTORY * categories.STRUCTURE,false,false)
         for _,unit in factories do
             if unit:IsIdleState() then continue end
@@ -3019,6 +3091,10 @@ GetAvgSpendPerFactoryTypeRNG = function(aiBrain)
             if EntityCategoryContains(categories.LAND,unit) then
                 fmanager.spend.Land.total=fmanager.spend.Land.total+spendm
                 fcount.Land.total=fcount.Land.total+1
+                if unit:IsUnitState('Upgrading') then
+                    fmanager.uspend.Land=fmanager.uspend.Land+spendm
+                    ucount.Land=ucount.Land+1
+                end
                 if EntityCategoryContains(categories.TECH1,unit) then
                     fcount.Land.T1=fcount.Land.T1+1
                     fmanager.spend.Land.T1=fmanager.spend.Land.T1+spendm
@@ -3032,6 +3108,10 @@ GetAvgSpendPerFactoryTypeRNG = function(aiBrain)
             elseif EntityCategoryContains(categories.AIR,unit) then
                 fmanager.spend.Air.total=fmanager.spend.Air.total+spendm
                 fcount.Air.total=fcount.Air.total+1
+                if unit:IsUnitState('Upgrading') then
+                    fmanager.uspend.Air=fmanager.uspend.Air+spendm
+                    ucount.Air=ucount.Air+1
+                end
                 if EntityCategoryContains(categories.TECH1,unit) then
                     fcount.Land.T1=fcount.Air.T1+1
                     fmanager.spend.Air.T1=fmanager.spend.Air.T1+spendm
@@ -3045,6 +3125,10 @@ GetAvgSpendPerFactoryTypeRNG = function(aiBrain)
             elseif EntityCategoryContains(categories.NAVAL,unit) then
                 fmanager.spend.Naval.total=fmanager.spend.Naval.total+spendm
                 fcount.Naval.total=fcount.Naval.total+1
+                if unit:IsUnitState('Upgrading') then
+                    fmanager.uspend.Naval=fmanager.uspend.Naval+spendm
+                    ucount.Naval=ucount.Naval+1
+                end
                 if EntityCategoryContains(categories.TECH1,unit) then
                     fcount.Land.T1=fcount.Naval.T1+1
                     fmanager.spend.Naval.T1=fmanager.spend.Naval.T1+spendm
@@ -3062,6 +3146,11 @@ GetAvgSpendPerFactoryTypeRNG = function(aiBrain)
                 if v>0 then
                     aiBrain.fmanager.spend[i][j]=(v/fcount[i][j]+aiBrain.fmanager.spend[i][j])/2
                 end
+            end
+        end
+        for i,v in fmanager.uspend do
+            if v>0 then
+                aiBrain.fmanager.uspend[i]=(v+aiBrain.fmanager.uspend[i])/2
             end
         end
         local factotal=aiBrain.smanager.fac

@@ -84,7 +84,8 @@ Platoon = Class(RNGAIPlatoon) {
             if target then
                 local targetPos = target:GetPosition()
                 local platoonCount = table.getn(GetPlatoonUnits(self))
-                if (threatCountLimit < 5 ) and (VDist2Sq(currentPlatPos[1], currentPlatPos[2], startX, startZ) < 22500) and (GetThreatAtPosition(aiBrain, targetPos, aiBrain.BrainIntel.IMAPConfig.Rings, true, 'AntiAir') > platoonThreat) and platoonCount < platoonLimit then
+                if not currentPlatPos then self:PlatoonDisband() end
+                if (threatCountLimit < 5 ) and (VDist2Sq(currentPlatPos[1], currentPlatPos[3], startX, startZ) < 22500) and (GetThreatAtPosition(aiBrain, targetPos, aiBrain.BrainIntel.IMAPConfig.Rings, true, 'AntiAir') > platoonThreat) and platoonCount < platoonLimit then
                     --LOG('Target air threat too high')
                     threatCountLimit = threatCountLimit + 1
                     self:MoveToLocation(homeBaseLocation, false)
@@ -2729,7 +2730,7 @@ Platoon = Class(RNGAIPlatoon) {
             --LOG('Check if we can move to location')
             --LOG('Unit is '..eng.UnitId)
 
-            if AIUtils.EngineerMoveWithSafePathRNG(aiBrain, eng, buildLocation) then
+            if AIUtils.EngineerMoveWithSafePathCHP(aiBrain, eng, buildLocation) then
                 if not eng or eng.Dead or not eng.PlatoonHandle or not PlatoonExists(aiBrain, eng.PlatoonHandle) then
                     if eng then eng.ProcessBuild = nil end
                     return
@@ -6640,6 +6641,9 @@ Platoon = Class(RNGAIPlatoon) {
                     end
                 end
             end
+            if not PlatoonExists(aiBrain, self) then
+                return
+            end
             WaitTicks(10)
         end
     end,
@@ -6741,6 +6745,9 @@ Platoon = Class(RNGAIPlatoon) {
                     end 
                     --]]
                 end
+                if not PlatoonExists(aiBrain, self) then
+                    return
+                end
             WaitTicks(2)
         end
     end,
@@ -6812,6 +6819,9 @@ Platoon = Class(RNGAIPlatoon) {
                     end
                 end
             end
+            if not PlatoonExists(aiBrain, self) then
+                return
+            end
             WaitTicks(20)
         end
     end,
@@ -6832,7 +6842,7 @@ Platoon = Class(RNGAIPlatoon) {
                 local enemy=self:FindClosestUnit('Attack', 'Enemy', true, categories.ALLUNITS - categories.NAVAL - categories.AIR - categories.WALL)
                 if not enemy then
                 else
-                if VDist3Sq(enemy:GetPosition(),self:GetPlatoonPosition())<platoon.MaxWeaponRange*platoon.MaxWeaponRange*1.5 then
+                if VDist3Sq(enemy:GetPosition(),self:GetPlatoonPosition())<platoon.MaxWeaponRange*platoon.MaxWeaponRange*3 then
                     platoon.navigating=false
                     platoon.path=nil
                     WaitTicks(20)
@@ -6897,6 +6907,9 @@ Platoon = Class(RNGAIPlatoon) {
                     table.remove(platoon.path,i)
                 end
             end
+            if not PlatoonExists(aiBrain, self) then
+                return
+            end
             WaitTicks(30)
             continue
         end
@@ -6904,6 +6917,7 @@ Platoon = Class(RNGAIPlatoon) {
     ShowUnitWeaponTargetRNG = function(self, unit, weapon, target)
         -- Show a line to the target from the weapon for a short time
         for _=0,10 do
+            if unit.Dead then return end
             if target and not target.Dead then
                 weapon:SetTargetEntity(target)
                 DrawLinePop(unit:GetPosition(),target:GetPosition(),'ddFF0000')
@@ -6991,103 +7005,33 @@ Platoon = Class(RNGAIPlatoon) {
         end
     end,
     MexBuildAIRNG = function(self)
-        WaitTicks(10)
+        WaitTicks(math.random(10,40))
         local aiBrain = self:GetBrain()
         local platoonUnits = GetPlatoonUnits(self)
         local armyIndex = aiBrain:GetArmyIndex()
         local cons = self.PlatoonData.Construction
         local buildingTmpl, buildingTmplFile, baseTmpl, baseTmplFile, baseTmplDefault
-        local eng
-        for k, v in platoonUnits do
-            if not v.Dead and EntityCategoryContains(categories.ENGINEER, v) then
-                IssueClearCommands({v})
-                if not eng then
-                    eng = v
-                else
-                    IssueGuard({v}, eng)
-                end
-            end
-        end
+        local eng=platoonUnits[1]
+        self:Stop()
         if not eng or eng.Dead then
             WaitTicks(1)
             self:PlatoonDisband()
             return
         end
-        if eng:IsUnitState('Building') or eng:IsUnitState('Upgrading') or eng:IsUnitState("Enhancing") then
-           return
+        if not eng.EngineerBuildQueue then
+            eng.EngineerBuildQueue={}
         end
-        local FactionToIndex  = { UEF = 1, AEON = 2, CYBRAN = 3, SERAPHIM = 4, NOMADS = 5}
-        local factionIndex = cons.FactionIndex or FactionToIndex[eng.factionCategory]
+        local FactionIndexToName = {[1] = 'UEF', [2] = 'AEON', [3] = 'CYBRAN', [4] = 'SERAPHIM', [5] = 'NOMADS', [6] = 'ARM', [7] = 'CORE' }
+        local factionIndex = aiBrain:GetFactionIndex()
         buildingTmplFile = import(cons.BuildingTemplateFile or '/lua/BuildingTemplates.lua')
         baseTmplFile = import(cons.BaseTemplateFile or '/lua/BaseTemplates.lua')
         baseTmplDefault = import('/lua/BaseTemplates.lua')
         buildingTmpl = buildingTmplFile[(cons.BuildingTemplate or 'BuildingTemplates')][factionIndex]
         baseTmpl = baseTmplFile[(cons.BaseTemplate or 'BaseTemplates')][factionIndex]
-        if self.PlatoonData.NeedGuard then
-            eng.NeedGuard = true
-        end
-        -------- CHOOSE APPROPRIATE BUILD FUNCTION AND SETUP BUILD VARIABLES --------
-        local reference = false
-        local refName = false
-        local buildFunction
-        local closeToBuilder
-        local relative
-        local baseTmplList = {}
-
-        -- if we have nothing to build, disband!
-        if not cons.BuildStructures then
-            WaitTicks(1)
-            self:PlatoonDisband()
-            return
-        end
-        table.insert(baseTmplList, baseTmpl)
-        relative = true
-        reference = true
-        buildFunction = AIBuildStructures.AIExecuteBuildStructureRNG
-        if cons.BuildClose then
-            closeToBuilder = eng
-        end
-        if cons.BuildStructures[1] == 'T1Resource' or cons.BuildStructures[1] == 'T2Resource' or cons.BuildStructures[1] == 'T3Resource' then
-            relative = true
-            closeToBuilder = eng
-            local guards = eng:GetGuards()
-            for k,v in guards do
-                if not v.Dead and v.PlatoonHandle and PlatoonExists(aiBrain, v.PlatoonHandle) then
-                    v.PlatoonHandle:PlatoonDisband()
-                end
-            end
-        end
 
         --LOG("*AI DEBUG: Setting up Callbacks for " .. eng.Sync.id)
         self.SetupEngineerCallbacksRNG(eng)
-
-        -------- BUILD BUILDINGS HERE --------
-        for baseNum, baseListData in baseTmplList do
-            for k, v in cons.BuildStructures do
-                if PlatoonExists(aiBrain, self) then
-                    if not eng.Dead then
-                        local faction = SUtils.GetEngineerFaction(eng)
-                        if aiBrain.CustomUnits[v] and aiBrain.CustomUnits[v][faction] then
-                            local replacement = SUtils.GetTemplateReplacement(aiBrain, v, faction, buildingTmpl)
-                            if replacement then
-                                buildFunction(aiBrain, eng, v, closeToBuilder, relative, replacement, baseListData, reference, cons)
-                            else
-                                buildFunction(aiBrain, eng, v, closeToBuilder, relative, buildingTmpl, baseListData, reference, cons)
-                            end
-                        else
-                            buildFunction(aiBrain, eng, v, closeToBuilder, relative, buildingTmpl, baseListData, reference, cons)
-                        end
-                    else
-                        if PlatoonExists(aiBrain, self) then
-                            WaitTicks(1)
-                            self:PlatoonDisband()
-                            return
-                        end
-                    end
-                end
-            end
-        end
-
+        local whatToBuild = aiBrain:DecideWhatToBuild(eng, 'T1Resource', buildingTmpl)
         -- wait in case we're still on a base
         if not eng.Dead then
             local count = 0
@@ -7096,9 +7040,64 @@ Platoon = Class(RNGAIPlatoon) {
                 count = count + 1
             end
         end
-
-        if not eng:IsUnitState('Building') then
-            return self.ProcessBuildMexCommandRNG(eng, false)
+        while not aiBrain.expansionMex do WaitSeconds(2) end
+        local markerTable=table.copy(aiBrain.expansionMex)
+        if eng.Dead then self:PlatoonDisband() end
+        for i,v in markerTable do
+            if not AIAttackUtils.CanGraphTo(eng,v.Position,'Amphibious') then table.remove(markerTable,i) end
+        end
+        while eng and not eng.Dead do
+            local platoonPos=self:GetPlatoonPosition()
+            table.sort(markerTable,function(a,b) return VDist2Sq(a.Position[1],a.Position[3],platoonPos[1],platoonPos[3])/VDist3Sq(aiBrain.emanager.enemy.Position,a.Position)/a.priority/a.priority<VDist2Sq(b.Position[1],b.Position[3],platoonPos[1],platoonPos[3])/VDist3Sq(aiBrain.emanager.enemy.Position,b.Position)/b.priority/b.priority end)
+            local currentmexpos=nil
+            local curindex=nil
+            for i,v in markerTable do
+                if aiBrain:CanBuildStructureAt('ueb1103', v.Position) then
+                    currentmexpos=v.Position
+                    curindex=i
+                    break
+                end
+            end
+            if not currentmexpos then self:PlatoonDisband() end
+            if not AIUtils.EngineerMoveWithSafePathCHP(aiBrain, eng, currentmexpos, whatToBuild) then table.remove(markerTable,curindex) continue end
+            local firstmex=currentmexpos
+            local initialized=nil
+            for _=0,3,1 do
+                if not currentmexpos then break end
+                local bool,markers=MABC.CanBuildOnMassEng2(aiBrain, currentmexpos, 30)
+                if bool then
+                    --LOG('We can build on a mass marker within 30')
+                    --local massMarker = RUtils.GetClosestMassMarkerToPos(aiBrain, waypointPath)
+                    --LOG('Mass Marker'..repr(massMarker))
+                    --LOG('Attempting second mass marker')
+                    for _,massMarker in markers do
+                    RUtils.EngineerTryReclaimCaptureArea(aiBrain, eng, massMarker.Position)
+                    AIUtils.EngineerTryRepair(aiBrain, eng, whatToBuild, massMarker.Position)
+                    aiBrain:BuildStructure(eng, whatToBuild, {massMarker.Position[1], massMarker.Position[3], 0}, false)
+                    local newEntry = {whatToBuild, {massMarker.Position[1], massMarker.Position[3], 0}, false,Position=massMarker.Position}
+                    table.insert(eng.EngineerBuildQueue, newEntry)
+                    currentmexpos=massMarker.Position
+                    end
+                else
+                    break
+                end
+            end
+            LOG('engineer command queue'..repr(eng:GetCommandQueue()))
+            while not eng.Dead and 0<table.getn(eng:GetCommandQueue()) or eng:IsUnitState('Building') or eng:IsUnitState("Moving") do
+                if eng:IsUnitState("Moving") and not initialized and VDist3Sq(self:GetPlatoonPosition(),firstmex)<12*12 then
+                    IssueClearCommands({eng})
+                    for _,v in eng.EngineerBuildQueue do
+                        RUtils.EngineerTryReclaimCaptureArea(aiBrain, eng, v.Position)
+                        AIUtils.EngineerTryRepair(aiBrain, eng, v[1], v.Position)
+                        aiBrain:BuildStructure(eng, v[1],v[2],v[3])
+                    end
+                    initialized=true
+                end
+                WaitTicks(20)
+            end
+            eng.EngineerBuildQueue={}
+            IssueClearCommands({eng})
+            WaitTicks(20)
         end
     end,
     ProcessBuildMexCommandRNG = function(eng, removeLastBuild)
