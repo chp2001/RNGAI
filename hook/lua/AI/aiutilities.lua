@@ -631,7 +631,7 @@ function FindUnclutteredAreaRNG(aiBrain, category, location, radius, maxUnits, m
 
     return retUnits
 end
-function EngineerMoveWithSafePathCHP(aiBrain, eng, destination, whatToBuild)
+function EngineerMoveWithSafePathCHP(aiBrain, eng, destination, whatToBuildM)
     if not destination then
         return false
     end
@@ -692,7 +692,7 @@ function EngineerMoveWithSafePathCHP(aiBrain, eng, destination, whatToBuild)
             path, reason = AIAttackUtils.EngineerGenerateSafePathToRNG(aiBrain, 'Amphibious', pos, destination)
         end
         if path then
-            if not whatToBuild then
+            if not whatToBuildM then
                 local cons = eng.PlatoonHandle.PlatoonData.Construction
                 local buildingTmpl, buildingTmplFile, baseTmpl, baseTmplFile, baseTmplDefault
                 local factionIndex = aiBrain:GetFactionIndex()
@@ -701,24 +701,26 @@ function EngineerMoveWithSafePathCHP(aiBrain, eng, destination, whatToBuild)
                 baseTmplDefault = import('/lua/BaseTemplates.lua')
                 buildingTmpl = buildingTmplFile[(cons.BuildingTemplate or 'BuildingTemplates')][factionIndex]
                 baseTmpl = baseTmplFile[(cons.BaseTemplate or 'BaseTemplates')][factionIndex]
-                whatToBuild = aiBrain:DecideWhatToBuild(eng, 'T1Resource', buildingTmpl)
+                whatToBuildM = aiBrain:DecideWhatToBuild(eng, 'T1Resource', buildingTmpl)
             end
             --LOG('* AI-RNG: EngineerMoveWithSafePath(): path 0 true')
             local pathSize = table.getn(path)
             -- Move to way points (but not to destination... leave that for the final command)
             for widx, waypointPath in path do
-                local bool,markers=MABC.CanBuildOnMassEng2(aiBrain, waypointPath, 40)
-                if bool then
-                    --LOG('We can build on a mass marker within 30')
-                    --local massMarker = RUtils.GetClosestMassMarkerToPos(aiBrain, waypointPath)
-                    --LOG('Mass Marker'..repr(massMarker))
-                    --LOG('Attempting second mass marker')
-                    for _,massMarker in markers do
-                    RUtils.EngineerTryReclaimCaptureArea(aiBrain, eng, massMarker.Position)
-                    EngineerTryRepair(aiBrain, eng, whatToBuild, massMarker.Position)
-                    aiBrain:BuildStructure(eng, whatToBuild, {massMarker.Position[1], massMarker.Position[3], 0}, false)
-                    local newEntry = {whatToBuild, {massMarker.Position[1], massMarker.Position[3], 0}, false}
-                    table.insert(eng.EngineerBuildQueue, newEntry)
+                if widx>=3 then
+                    local bool,markers=MABC.CanBuildOnMassEng2(aiBrain, waypointPath, 30)
+                    if bool then
+                        --LOG('We can build on a mass marker within 30')
+                        --local massMarker = RUtils.GetClosestMassMarkerToPos(aiBrain, waypointPath)
+                        --LOG('Mass Marker'..repr(massMarker))
+                        --LOG('Attempting second mass marker')
+                        for _,massMarker in markers do
+                        RUtils.EngineerTryReclaimCaptureArea(aiBrain, eng, massMarker.Position)
+                        EngineerTryRepair(aiBrain, eng, whatToBuildM, massMarker.Position)
+                        aiBrain:BuildStructure(eng, whatToBuildM, {massMarker.Position[1], massMarker.Position[3], 0}, false)
+                        local newEntry = {whatToBuildM, {massMarker.Position[1], massMarker.Position[3], 0}, false}
+                        table.insert(eng.EngineerBuildQueue, newEntry)
+                        end
                     end
                 end
                 if (widx - math.floor(widx/2)*2)==0 or VDist3Sq(destination,waypointPath)<40*40 then continue end

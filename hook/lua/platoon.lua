@@ -6147,7 +6147,7 @@ Platoon = Class(RNGAIPlatoon) {
             platoon.targetmex=nil
             platoon.targeteng=nil
             platoon.targetpd=nil
-            target = self:FindClosestUnit('Attack', 'Enemy', true, categories.ALLUNITS - categories.COMMAND - (categories.DEFENSE * categories.DIRECTFIRE) - categories.NAVAL - categories.AIR - categories.WALL)
+            target = self:FindClosestUnit('Attack', 'Enemy', true, categories.ALLUNITS - categories.SCOUT - categories.COMMAND - (categories.DEFENSE * categories.DIRECTFIRE) - categories.NAVAL - categories.AIR - categories.WALL)
             local targetacuDist
             targetacu = self:FindClosestUnit('Attack', 'Enemy', true, categories.COMMAND)
             local targetmexDist
@@ -6305,7 +6305,7 @@ Platoon = Class(RNGAIPlatoon) {
                             continue
                         end
                     end
-                    platoon.path=AIAttackUtils.PlatoonGenerateSafePathToRNG(aiBrain, self.MovementLayer, platoon.Pos, platoon.dest, -20, 150,ScenarioInfo.size[1]*ScenarioInfo.size[2])
+                    platoon.path=AIAttackUtils.PlatoonGenerateSafePathToRNG(aiBrain, self.MovementLayer, platoon.Pos, platoon.dest, 0, 150,ScenarioInfo.size[1]*ScenarioInfo.size[2])
                     platoon.navigating=true
                     WaitTicks(40)
                     continue
