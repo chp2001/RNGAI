@@ -2,13 +2,14 @@ local RNGAIBeginSessionFunction = BeginSession
 
 function BeginSession()
     RNGAIBeginSessionFunction()
-    if ScenarioInfo.Options.AIThreatDisplay ~= 'threatOff' then
+    if ScenarioInfo.Options.AIThreatDisplay == 'threatOn' then
         ForkThread(DrawIMAPThreatsRNG)
     end
 end
 
 function DrawIMAPThreatsRNG()
     coroutine.yield(100)
+    if not ScenarioInfo.Options.AIThreatDisplay == 'threatOn' then return end
     --LOG('Starting IMAP Threat Thread')
     local MCountX = 48
     local MCountY = 48
@@ -52,6 +53,6 @@ function DrawIMAPThreatsRNG()
                 end
             end        
         end
-        coroutine.yield(4)
+        coroutine.yield(2)
     end
 end

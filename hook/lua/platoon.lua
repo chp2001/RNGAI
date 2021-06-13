@@ -2316,7 +2316,7 @@ Platoon = Class(RNGAIPlatoon) {
             local relativeTo = table.copy(eng:GetPosition())
             --LOG('relativeTo is'..repr(relativeTo))
             relative = true
-            local tmpReference = aiBrain:FindPlaceToBuild('T2EnergyProduction', 'uab1201', baseTmplDefault['BaseTemplates'][factionIndex], relative, eng, nil, relativeTo[1], relativeTo[3])
+            local tmpReference = aiBrain:FindPlaceToBuild('T3EnergyProduction', 'uab1201', baseTmplDefault['BaseTemplates'][factionIndex], relative, eng, nil, relativeTo[1], relativeTo[3])
             if tmpReference then
                 reference = eng:CalculateWorldPositionFromRelative(tmpReference)
             else
@@ -2509,6 +2509,32 @@ Platoon = Class(RNGAIPlatoon) {
             end
             table.insert(baseTmplList, AIBuildStructures.AIBuildBaseTemplateFromLocation(baseTmpl, reference))
             buildFunction = AIBuildStructures.AIExecuteBuildStructureRNG
+        elseif cons.AdjacencyPriority then
+            relative = false
+            local pos = aiBrain.BuilderManagers[eng.BuilderManagerData.LocationType].EngineerManager.Location
+            local cats = {}
+            LOG('setting up adjacencypriority... cats are '..repr(cons.AdjacencyPriority))
+            for _,v in cons.AdjacencyPriority do
+                table.insert(cats,v)
+            end
+            reference={}
+            if not pos or not pos then
+                WaitTicks(1)
+                self:PlatoonDisband()
+                return
+            end
+            for i,cat in cats do
+                -- convert text categories like 'MOBILE AIR' to 'categories.MOBILE * categories.AIR'
+                if type(cat) == 'string' then
+                    cat = ParseEntityCategory(cat)
+                end
+                local radius = (cons.AdjacencyDistance or 50)
+                local refunits=AIUtils.GetOwnUnitsAroundPoint(aiBrain, cat, pos, radius, cons.ThreatMin,cons.ThreatMax, cons.ThreatRings)
+                table.insert(reference,refunits)
+                LOG('cat '..i..' had '..repr(table.getn(refunits))..' units')
+            end
+            buildFunction = AIBuildStructures.AIBuildAdjacencyPriorityRNG
+            table.insert(baseTmplList, baseTmpl)
         elseif cons.AvoidCategory then
             relative = false
             local pos = aiBrain.BuilderManagers[eng.BuilderManagerData.LocationType].EngineerManager.Location
@@ -2545,8 +2571,7 @@ Platoon = Class(RNGAIPlatoon) {
                 self:PlatoonDisband()
                 return
             end
-            reference  = AIUtils.GetOwnUnitsAroundPoint(aiBrain, cat, pos, radius, cons.ThreatMin,
-                                                        cons.ThreatMax, cons.ThreatRings)
+            reference  = AIUtils.GetOwnUnitsAroundPoint(aiBrain, cat, pos, radius, cons.ThreatMin,cons.ThreatMax, cons.ThreatRings)
             buildFunction = AIBuildStructures.AIBuildAdjacencyRNG
             table.insert(baseTmplList, baseTmpl)
         else
@@ -2688,7 +2713,7 @@ Platoon = Class(RNGAIPlatoon) {
         if (not eng) or eng.Dead or (not eng.PlatoonHandle) or eng.Combat or eng.Upgrading or eng.GoingHome then
             return
         end
-
+        if not eng.ProcessBuild then eng.ProcessBuild=true end
         local aiBrain = eng.PlatoonHandle:GetBrain()
         if not aiBrain or eng.Dead or not eng.EngineerBuildQueue or table.getn(eng.EngineerBuildQueue) == 0 then
             if PlatoonExists(aiBrain, eng.PlatoonHandle) then
@@ -6025,7 +6050,92 @@ Platoon = Class(RNGAIPlatoon) {
             WaitTicks(2)
         end
     end,
+    CHPMergePlatoon = function(self,radius)
+        local aiBrain = self:GetBrain()
+        if not self.chpdata then self.chpdata={} end
+        self.chpdata.merging=true
+        WaitTicks(3)
+        --local other
+        local best = radius*radius
+        local ps1 = table.copy(aiBrain:GetPlatoonsList())
+        local ps = {}
+        if table.getn(self:GetPlatoonUnits())<1 or table.getn(self:GetPlatoonUnits())>30 then return end
+        for i, p in ps1 do
+            if not p or p==self or not aiBrain:PlatoonExists(p) or not p.chpdata.name or not p.chpdata.name==self.chpdata.name or VDist3Sq(self:GetPlatoonPosition(),p:GetPlatoonPosition())>best or table.getn(p:GetPlatoonUnits())>30 then  
+                --LOG('merge table removed '..repr(i)..' merge table now holds '..repr(table.getn(ps)))
+            else
+                table.insert(ps,p)
+            end
+        end
+        if table.getn(ps)<1 then 
+            WaitSeconds(3)
+            self.chpdata.merging=false
+            return 
+        elseif table.getn(ps)==1 then
+            if ps[1].chpdata and self then
+                -- actually merge
+                if table.getn(self:GetPlatoonUnits())<table.getn(ps[1]:GetPlatoonUnits()) then
+                    self.chpdata.merging=false
+                    return
+                else
+                    local units = ps[1]:GetPlatoonUnits()
+                    LOG('ps=1 merging '..repr(ps[1].chpdata)..'into '..repr(self.chpdata))
+                    local validUnits = {}
+                    local bValidUnits = false
+                    for _,u in units do
+                        if not u.Dead and not u:IsUnitState('Attached') then
+                            table.insert(validUnits, u)
+                            bValidUnits = true
+                        end
+                    end
+                    if not bValidUnits or table.getn(validUnits)<1 then
+                        return
+                    end
+                    aiBrain:AssignUnitsToPlatoon(self,validUnits,'Attack','NoFormation')
+                    self.chpdata.merging=false
+                    ps[1]:PlatoonDisbandNoAssign()
+                    return
+                end
+            end
+        else
+            table.sort(ps,function(a,b) return VDist3Sq(a:GetPlatoonPosition(),self:GetPlatoonPosition())<VDist3Sq(b:GetPlatoonPosition(),self:GetPlatoonPosition()) end)
+            for _,other in ps do
+                if other and self then
+                    -- actually merge
+                    if table.getn(self:GetPlatoonUnits())<table.getn(other:GetPlatoonUnits()) then
+                        continue
+                    else
+                        local units = other:GetPlatoonUnits()
+                        LOG('ps>1 merging '..repr(other.chpdata)..'into '..repr(self.chpdata))
+                        local validUnits = {}
+                        local bValidUnits = false
+                        for _,u in units do
+                            if not u.Dead and not u:IsUnitState('Attached') then
+                                table.insert(validUnits, u)
+                                bValidUnits = true
+                            end
+                        end
+                        if not bValidUnits or table.getn(validUnits)<1 then
+                            continue
+                        end
+                        aiBrain:AssignUnitsToPlatoon(self,validUnits,'Attack','NoFormation')
+                        self.chpdata.merging=false
+                        other:PlatoonDisbandNoAssign()
+                        return
+                    end
+                end
+            end
+            self.chpdata.merging=false
+        end
+    end,
     TruePlatoonRNG = function(self)
+        local function GetWeightedHealthRatio(unit)
+            if unit.MyShield then
+                return (unit.MyShield:GetHealth()+unit:GetHealth())/(unit.MyShield:GetMaxHealth()+unit:GetMaxHealth())
+            else
+                return unit:GetHealthPercent()
+            end
+        end
         self:Stop()
         local aiBrain = self:GetBrain()
         local armyIndex = aiBrain:GetArmyIndex()
@@ -6045,6 +6155,7 @@ Platoon = Class(RNGAIPlatoon) {
         self:ForkThread(self.HighlightTruePlatoon)
         self:ForkThread(self.OptimalTargetingRNG)
         self:ForkThread(self.PathNavigationRNG)
+        self.chpdata = { target = nil, ourThreat = 0, theirThreat = 0, pos = nil, nextPos = nil, threatPos = nil, name = 'CHPTruePlatoon'}
         local platoon=self
         local homebasex,homebasey = aiBrain:GetArmyStartPos()
         local homepos = {homebasex,GetTerrainHeight(homebasex,homebasey),homebasey}
@@ -6098,6 +6209,7 @@ Platoon = Class(RNGAIPlatoon) {
         platoon.evaluationradius=platoon.MaxWeaponRange*0.7
         LOG('platoon evaluationradius = '..repr(platoon.evaluationradius))
         while PlatoonExists(aiBrain, self) do
+            self:CHPMergePlatoon(20)
             platoonUnits = GetPlatoonUnits(self)
             if platoon.navigating then 
                 while platoon.navigating do 
@@ -6112,17 +6224,20 @@ Platoon = Class(RNGAIPlatoon) {
             local platoonNum=table.getn(platoonUnits)
             local spread=0
             local snum=0
-            for _,v in platoonUnits do
-                if not v or v.Dead then continue end
-                if VDist3Sq(v:GetPosition(),platoon.Pos)>v.MaxWeaponRange/5*v.MaxWeaponRange/5+platoonNum then
-                    IssueClearCommands({v})
-                    IssueMove({v},RUtils.LerpyRotate(v:GetPosition(),platoon.Pos,{VDist3(v:GetPosition(),platoon.Pos),v.MaxWeaponRange/6+math.sqrt(platoonNum)}))
-                    spread=spread+VDist3Sq(v:GetPosition(),platoon.Pos)/v.MaxWeaponRange/v.MaxWeaponRange
-                    snum=snum+1
+            platoon.clumpmode=true
+            if platoon.clumpmode then
+                for _,v in platoonUnits do
+                    if not v or v.Dead then continue end
+                    if VDist3Sq(v:GetPosition(),platoon.Pos)>v.MaxWeaponRange/5*v.MaxWeaponRange/5+platoonNum*platoonNum then
+                        IssueClearCommands({v})
+                        IssueMove({v},RUtils.LerpyRotate(v:GetPosition(),platoon.Pos,{VDist3(v:GetPosition(),platoon.Pos),v.MaxWeaponRange/6}))
+                        spread=spread+VDist3Sq(v:GetPosition(),platoon.Pos)/v.MaxWeaponRange/v.MaxWeaponRange
+                        snum=snum+1
+                    end
                 end
-            end
-            if spread>0 then
-                WaitTicks(math.ceil(math.sqrt(spread+10)*5))
+                if spread>4 then
+                    WaitTicks(math.ceil(math.sqrt(spread+10)*5))
+                end
             end
             platoon.health=0
             platoon.mhealth=0
@@ -6147,15 +6262,51 @@ Platoon = Class(RNGAIPlatoon) {
             platoon.targetmex=nil
             platoon.targeteng=nil
             platoon.targetpd=nil
-            target = self:FindClosestUnit('Attack', 'Enemy', true, categories.ALLUNITS - categories.SCOUT - categories.COMMAND - (categories.DEFENSE * categories.DIRECTFIRE) - categories.NAVAL - categories.AIR - categories.WALL)
+            target = self:FindClosestUnit('Attack', 'Enemy', true, categories.ALLUNITS - categories.SCOUT - categories.COMMAND - (categories.DEFENSE * categories.DIRECTFIRE) - categories.NAVAL - categories.AIR - categories.WALL - categories.NAVAL - categories.SONAR - categories.ANTINAVY)
+            if target then 
+                local targetpos=target:GetPosition()
+                if GetTerrainHeight(targetpos[1],targetpos[3])<GetSurfaceHeight(targetpos[1],targetpos[3]) then
+                    target = self:FindClosestUnit('Attack', 'Enemy', true, categories.ALLUNITS - categories.SCOUT - categories.COMMAND - (categories.DEFENSE) - categories.NAVAL - categories.AIR - categories.WALL - categories.NAVAL - categories.NAVAL - categories.SONAR - categories.AMPHIBIOUS)
+                    if target then 
+                        local targetpos=target:GetPosition()
+                        if GetTerrainHeight(targetpos[1],targetpos[3])<GetSurfaceHeight(targetpos[1],targetpos[3]) then
+                            target = self:FindClosestUnit('Attack', 'Enemy', true, categories.COMMAND)
+                        end
+                    end
+                end
+            end
             local targetacuDist
             targetacu = self:FindClosestUnit('Attack', 'Enemy', true, categories.COMMAND)
+            if targetacu then 
+                local targetpos=targetacu:GetPosition()
+                if GetTerrainHeight(targetpos[1],targetpos[3])<GetSurfaceHeight(targetpos[1],targetpos[3]) then
+                    targetacu = nil
+                end
+            end
             local targetmexDist
             targetmex = self:FindClosestUnit('Attack', 'Enemy', true, categories.MASSEXTRACTION)
+            if targetmex then 
+                local targetpos=targetmex:GetPosition()
+                if GetTerrainHeight(targetpos[1],targetpos[3])<GetSurfaceHeight(targetpos[1],targetpos[3]) then
+                    targetmex = nil
+                end
+            end
             local targetengDist
             targeteng = self:FindClosestUnit('Attack', 'Enemy', true, categories.ENGINEER - categories.AIR - categories.NAVAL - categories.COMMAND)
+            if targeteng then 
+                local targetpos=targeteng:GetPosition()
+                if GetTerrainHeight(targetpos[1],targetpos[3])<GetSurfaceHeight(targetpos[1],targetpos[3]) then
+                    targeteng = nil
+                end
+            end
             local targetpdDist
             targetpd = self:FindClosestUnit('Attack', 'Enemy', true, categories.DEFENSE * categories.DIRECTFIRE)
+            if targetpd then 
+                local targetpos=targetpd:GetPosition()
+                if GetTerrainHeight(targetpos[1],targetpos[3])<GetSurfaceHeight(targetpos[1],targetpos[3]) then
+                    targetpd = nil
+                end
+            end
             if targetacu then
                 platoon.targetacu=targetacu:GetPosition()
                 targetacuDist=VDist2(platoon.targetacu[1],platoon.targetacu[3],platoon.Pos[1],platoon.Pos[3])
@@ -6190,14 +6341,19 @@ Platoon = Class(RNGAIPlatoon) {
                 targetPosition=target:GetPosition()
                 platoon.target=targetPosition
                 targetDist=VDist2(targetPosition[1],targetPosition[3],platoon.Pos[1],platoon.Pos[3])
+                if not AIAttackUtils.CanGraphTo(AIAttackUtils.GetMostRestrictiveLayer(platoon),targetPosition,'Land') then
+                    target=nil
+                    platoon.target=nil
+                    targetPosition=nil
+                end
             end
-            if not target and not targetacu or targetDist>platoon.MaxWeaponRange*1.5 or (not target and targetacuDist>platoon.MaxWeaponRange*2) or not AIAttackUtils.CanGraphTo(AIAttackUtils.GetMostRestrictiveLayer(platoon),targetPosition,'Land') then
+            if not target and not targetacu or targetDist>platoon.MaxWeaponRange*1.5 or (not target and targetacuDist>platoon.MaxWeaponRange*2) or target and not AIAttackUtils.CanGraphTo(AIAttackUtils.GetMostRestrictiveLayer(platoon),targetPosition,'Land') then
                 if platoon.path and VDist3Sq(platoon.path[table.getn(platoon.path)],platoon.Pos)<platoon.MaxWeaponRange then
                     platoon.path=nil
                 end
                 if platoon.navigating then while platoon.navitating do WaitTicks(10) end end
                 if target then
-                    platoon.path=AIAttackUtils.PlatoonGenerateSafePathToRNG(aiBrain, self.MovementLayer, platoon.Pos, targetPosition, -20, 150,ScenarioInfo.size[1]*ScenarioInfo.size[2])
+                    platoon.path=AIAttackUtils.PlatoonGenerateSafePathTo(aiBrain, self.MovementLayer, platoon.Pos, targetPosition, 0, 150,ScenarioInfo.size[1]*ScenarioInfo.size[2])
                     if not platoon.path then 
                         platoon.target=nil
                         local mex=AIUtils.AIGetMarkerLocations(aiBrain, 'Mass')
@@ -6217,14 +6373,18 @@ Platoon = Class(RNGAIPlatoon) {
                                 continue
                             end
                             if not v.Position then continue end
-                            if VDist2Sq(v.Position[1],v.Position[3],platoon.Pos[1],platoon.Pos[3])<100*100 then
+                            if VDist2Sq(v.Position[1],v.Position[3],platoon.Pos[1],platoon.Pos[3])<150*150 then
                                 continue
                             end
                             table.insert(raidlocs,v)
                         end
                         table.sort(raidlocs,function(k1,k2) return VDist2Sq(k1.Position[1],k1.Position[3],platoon.Pos[1],platoon.Pos[3])*VDist2Sq(k1.Position[1],k1.Position[3],platoon.home[1],platoon.home[3])/VDist2Sq(k1.Position[1],k1.Position[3],platoon.base[1],platoon.base[3])<VDist2Sq(k2.Position[1],k2.Position[3],platoon.Pos[1],platoon.Pos[3])*VDist2Sq(k2.Position[1],k2.Position[3],platoon.home[1],platoon.home[3])/VDist2Sq(k2.Position[1],k2.Position[3],platoon.base[1],platoon.base[3]) end)
                         platoon.dest=raidlocs[1].Position
-                        platoon.dest={platoon.dest[1]+math.random(-4,4),platoon.dest[2],platoon.dest[3]+math.random(-4,4)}
+                        if platoon.dest then
+                            platoon.dest={platoon.dest[1]+math.random(-4,4),platoon.dest[2],platoon.dest[3]+math.random(-4,4)}
+                        else
+                            platoon.dest=AIUtils.RandomLocation(platoon.home[1],platoon.home[3])
+                        end
                         self:Stop()
                         self:MoveToLocation(platoon.dest, false)
                         for _,v in platoonUnits do
@@ -6236,7 +6396,7 @@ Platoon = Class(RNGAIPlatoon) {
                                 continue
                             end
                         end
-                        platoon.path=AIAttackUtils.PlatoonGenerateSafePathToRNG(aiBrain, self.MovementLayer, platoon.Pos, platoon.dest, -20, 150,ScenarioInfo.size[1]*ScenarioInfo.size[2])
+                        platoon.path=AIAttackUtils.PlatoonGenerateSafePathTo(aiBrain, self.MovementLayer, platoon.Pos, platoon.dest, 0, 150,ScenarioInfo.size[1]*ScenarioInfo.size[2])
                         platoon.navigating=true
                         WaitTicks(40)
                         continue
@@ -6283,17 +6443,22 @@ Platoon = Class(RNGAIPlatoon) {
                             continue
                         end
                         if not v.Position then continue end
-                        if VDist2Sq(v.Position[1],v.Position[3],platoon.Pos[1],platoon.Pos[3])<100*100 then
+                        if VDist2Sq(v.Position[1],v.Position[3],platoon.Pos[1],platoon.Pos[3])<150*150 then
                             continue
                         end
-                        if not AIAttackUtils.CanGraphTo(AIAttackUtils.GetMostRestrictiveLayer(platoon),v.Position,'Land') then
+                        if not AIAttackUtils.GetMostRestrictiveLayer(platoon) or not AIAttackUtils.CanGraphTo(AIAttackUtils.GetMostRestrictiveLayer(platoon),v.Position,'Land') then
                             continue
                         end
                         table.insert(raidlocs,v)
                     end
+                    --LOG('raidlocs='..repr(raidlocs))
                     table.sort(raidlocs,function(k1,k2) return VDist2Sq(k1.Position[1],k1.Position[3],platoon.Pos[1],platoon.Pos[3])*VDist2Sq(k1.Position[1],k1.Position[3],platoon.home[1],platoon.home[3])/VDist2Sq(k1.Position[1],k1.Position[3],platoon.base[1],platoon.base[3])<VDist2Sq(k2.Position[1],k2.Position[3],platoon.Pos[1],platoon.Pos[3])*VDist2Sq(k2.Position[1],k2.Position[3],platoon.home[1],platoon.home[3])/VDist2Sq(k2.Position[1],k2.Position[3],platoon.base[1],platoon.base[3]) end)
                     platoon.dest=raidlocs[1].Position
-                    platoon.dest={platoon.dest[1]+math.random(-4,4),platoon.dest[2],platoon.dest[3]+math.random(-4,4)}
+                    if platoon.dest then
+                        platoon.dest={platoon.dest[1]+math.random(-4,4),platoon.dest[2],platoon.dest[3]+math.random(-4,4)}
+                    else
+                        platoon.dest=AIUtils.RandomLocation(platoon.home[1],platoon.home[3])
+                    end
                     self:Stop()
                     self:MoveToLocation(platoon.dest, false)
                     for _,v in platoonUnits do
@@ -6305,9 +6470,9 @@ Platoon = Class(RNGAIPlatoon) {
                             continue
                         end
                     end
-                    platoon.path=AIAttackUtils.PlatoonGenerateSafePathToRNG(aiBrain, self.MovementLayer, platoon.Pos, platoon.dest, 0, 150,ScenarioInfo.size[1]*ScenarioInfo.size[2])
+                    platoon.path=AIAttackUtils.PlatoonGenerateSafePathTo(aiBrain, self.MovementLayer, platoon.Pos, platoon.dest, 0, 150,ScenarioInfo.size[1]*ScenarioInfo.size[2])
                     platoon.navigating=true
-                    WaitTicks(40)
+                    WaitTicks(10)
                     continue
                 end
             else
@@ -6329,7 +6494,7 @@ Platoon = Class(RNGAIPlatoon) {
                     platoon.friendlyThreat=platoon.friendlyThreat+platoon.friendlyThreats[i]
                     platoon.enemyThreat=platoon.enemyThreat+platoon.enemyThreats[i]
                 end
-                platoon.ThreatLimit=(platoon.friendlyThreat+platoonThreat)*math.sqrt(platoon.health)
+                platoon.ThreatLimit=platoon.friendlyThreat+platoonThreat*math.sqrt(platoon.health)
                 if platoon.enemyThreat>platoon.ThreatLimit then
                     --ENGAGE RUNAWAYMODE
                     if VDist3(self:GetPlatoonPosition(),platoon.home)>30 then
@@ -6337,7 +6502,7 @@ Platoon = Class(RNGAIPlatoon) {
                     else
                         platoon.dest={platoon.base[1]+math.random(-4,4),platoon.base[2],platoon.base[3]+math.random(-4,4)}
                     end
-                    platoon.path=AIAttackUtils.PlatoonGenerateSafePathToRNG(aiBrain, self.MovementLayer, platoon.Pos, platoon.dest, 10, 150,ScenarioInfo.size[1]*ScenarioInfo.size[2])
+                    platoon.path=AIAttackUtils.PlatoonGenerateSafePathTo(aiBrain, self.MovementLayer, platoon.Pos, platoon.dest, 2, 150,ScenarioInfo.size[1]*ScenarioInfo.size[2])
                     if not platoon.path then 
                         local runawaydirection = 0
                         local evalweight=0
@@ -6382,11 +6547,11 @@ Platoon = Class(RNGAIPlatoon) {
                     end
                     local threatwait=math.ceil(platoon.enemyThreat/platoonThreat) or 0
                     platoon.pathretreat=true
-                    WaitTicks(100+threatwait*10)
+                    WaitTicks(20+threatwait*10)
                     platoon.pathretreat=nil
                     continue
                 end
-                if targetacu then
+                --[[if targetacu then
                     if targetacu and targetacuDist<platoon.MaxWeaponRange*2 and platoon.friendlyThreat/2>platoon.enemyThreat then
                         local smartPos = RUtils.lerpy({platoon.Pos[1]+math.random(-2,2),platoon.Pos[2],platoon.Pos[3]+math.random(-2,2)},targetacu:GetPosition(),{targetacuDist,targetacuDist - platoon.MaxWeaponRange})
                         smartPos = {smartPos[1]+math.random(-1,1),smartPos[2],smartPos[3]+math.random(-1,1)}
@@ -6417,55 +6582,55 @@ Platoon = Class(RNGAIPlatoon) {
                         else
                             platoon.dest={platoon.base[1]+math.random(-4,4),platoon.base[2],platoon.base[3]+math.random(-4,4)}
                         end
-                        platoon.path=AIAttackUtils.PlatoonGenerateSafePathToRNG(aiBrain, self.MovementLayer, platoon.Pos, platoon.dest, 10, 150,ScenarioInfo.size[1]*ScenarioInfo.size[2])
+                        platoon.path=AIAttackUtils.GeneratePath(aiBrain, self.MovementLayer, platoon.Pos, platoon.dest, 10, 150,ScenarioInfo.size[1]*ScenarioInfo.size[2])
                         if not platoon.path then 
-                        local runawaydirection = 0
-                        local evalweight=0
-                        for i,v in platoon.evaluationpoints do
-                            if platoon.threats[i]<0 then
-                                runawaydirection=runawaydirection-i*math.pi/4*platoon.threats[i]
-                                evalweight=evalweight-platoon.threats[i]
-                            else
-                                runawaydirection=runawaydirection+(i*math.pi/4+math.pi)*platoon.threats[i]
-                                evalweight=evalweight+platoon.threats[i]
+                            local runawaydirection = 0
+                            local evalweight=0
+                            for i,v in platoon.evaluationpoints do
+                                if platoon.threats[i]<0 then
+                                    runawaydirection=runawaydirection-i*math.pi/4*platoon.threats[i]
+                                    evalweight=evalweight-platoon.threats[i]
+                                else
+                                    runawaydirection=runawaydirection+(i*math.pi/4+math.pi)*platoon.threats[i]
+                                    evalweight=evalweight+platoon.threats[i]
+                                end
                             end
+                            local angle=runawaydirection/evalweight
+                            local runawaypoint={platoon.Pos[1]+math.cos(angle)*platoon.MaxWeaponRange,platoon.Pos[2],platoon.Pos[3]+math.sin(angle)*platoon.MaxWeaponRange}
+                            platoon.dest=runawaypoint
+                            for _,v in platoonUnits do
+                                IssueClearCommands({v})
+                                IssueMove({v},{platoon.dest[1]+math.random(-4,4),platoon.dest[2],platoon.dest[3]+math.random(-4,4)})
+                                WaitTicks(1)
+                            end
+                            WaitTicks(30)
+                            if VDist3(self:GetPlatoonPosition(),platoon.home)>30 then
+                                platoon.dest={platoon.home[1]+math.random(-4,4),platoon.home[2],platoon.home[3]+math.random(-4,4)}
+                                self:Stop()
+                                self:MoveToLocation(platoon.dest, false)
+                                WaitTicks(50)
+                            else
+                                platoon.dest={platoon.base[1]+math.random(-4,4),platoon.base[2],platoon.base[3]+math.random(-4,4)}
+                                self:Stop()
+                                self:MoveToLocation(platoon.dest, false)
+                                WaitTicks(50)
+                            end
+                            continue
                         end
-                        local angle=runawaydirection/evalweight
-                        local runawaypoint={platoon.Pos[1]+math.cos(angle)*platoon.MaxWeaponRange,platoon.Pos[2],platoon.Pos[3]+math.sin(angle)*platoon.MaxWeaponRange}
-                        platoon.dest=runawaypoint
-                        for _,v in platoonUnits do
-                            IssueClearCommands({v})
-                            IssueMove({v},{platoon.dest[1]+math.random(-4,4),platoon.dest[2],platoon.dest[3]+math.random(-4,4)})
-                            WaitTicks(1)
-                        end
-                        WaitTicks(30)
-                        if VDist3(self:GetPlatoonPosition(),platoon.home)>30 then
-                            platoon.dest={platoon.home[1]+math.random(-4,4),platoon.home[2],platoon.home[3]+math.random(-4,4)}
-                            self:Stop()
-                            self:MoveToLocation(platoon.dest, false)
-                            WaitTicks(50)
+                        self:Stop()
+                        if platoon.path[2] then
+                            platoon.dest={platoon.path[2][1]+math.random(-4,4),platoon.path[2][2],platoon.path[2][3]+math.random(-4,4)}
+                            self:MoveToLocation(platoon.dest,false)
                         else
-                            platoon.dest={platoon.base[1]+math.random(-4,4),platoon.base[2],platoon.base[3]+math.random(-4,4)}
-                            self:Stop()
-                            self:MoveToLocation(platoon.dest, false)
-                            WaitTicks(50)
+                            platoon.dest={platoon.path[1][1]+math.random(-4,4),platoon.path[1][2],platoon.path[1][3]+math.random(-4,4)}
+                            self:MoveToLocation(platoon.dest,false)
                         end
+                        platoon.pathretreat=true
+                        WaitTicks(50+math.ceil(math.random(100)))
+                        platoon.pathretreat=false
                         continue
                     end
-                    self:Stop()
-                    if platoon.path[2] then
-                        platoon.dest={platoon.path[2][1]+math.random(-4,4),platoon.path[2][2],platoon.path[2][3]+math.random(-4,4)}
-                        self:MoveToLocation(platoon.dest,false)
-                    else
-                        platoon.dest={platoon.path[1][1]+math.random(-4,4),platoon.path[1][2],platoon.path[1][3]+math.random(-4,4)}
-                        self:MoveToLocation(platoon.dest,false)
-                    end
-                    platoon.pathretreat=true
-                    WaitTicks(50+math.ceil(math.random(100)))
-                    platoon.pathretreat=false
-                    continue
-                    end
-                end
+                end]]
                 if targetpd then
                     if targetpd and targetpdDist<platoon.MaxWeaponRange*2 and not platoon.MaxWeaponRange>29 then
                         local homedist=VDist2(platoon.home[1],platoon.home[3],platoon.Pos[1],platoon.Pos[3])
@@ -6486,7 +6651,7 @@ Platoon = Class(RNGAIPlatoon) {
                         continue
                     end
                 end
-                if (targetmex or targeteng) and (targetmexDist<targetDist*1.5 or targetengDist<targetDist*1.5) then
+                --[[if (targetmex or targeteng) and (targetmexDist<targetDist*1.5 or targetengDist<targetDist*1.5) then
                     if targetengDist<platoon.MaxWeaponRange*1.5 or targetmexDist<platoon.MaxWeaponRange*1.5 then
                         if targeteng and targetengDist<targetDist*1.5 then
                             IssueClearCommands(platoonUnits)
@@ -6550,56 +6715,56 @@ Platoon = Class(RNGAIPlatoon) {
                             continue
                         end
                     end
-                end
-                if platoon.enemyThreat<platoon.ThreatLimit/4 and not platoon.Sniper and not targetacuDist<40 or platoon.enemyThreat<platoon.ThreatLimit/5 then
+                end]]
+                if platoon.enemyThreat<platoon.ThreatLimit/2 and not platoon.Sniper and not targetacuDist<40 or platoon.enemyThreat<platoon.ThreatLimit/5 then
                     local targetPosition=target:GetPosition()
                     platoon.target=targetPosition
                     targetDist=VDist2(targetPosition[1],targetPosition[3],platoon.Pos[1],platoon.Pos[3])
                     if targetDist<platoon.MaxWeaponRange*1.5 then
                         --RUtils.LerpyRotate(platoon.Pos,target:GetPosition(),{targetDist,6+math.random(-2,5)})
                         --RUtils.lerpy({platoon.Pos[1]+math.random(-2,2),platoon.Pos[2],platoon.Pos[3]+math.random(-2,2)},targetPosition,{targetDist,targetDist - 0.7*platoon.MaxWeaponRange/platoon.health})
-                        platoon.dest=RUtils.LerpyRotate(platoon.Pos,RUtils.lerpy({platoon.Pos[1]+math.random(-2,2),platoon.Pos[2],platoon.Pos[3]+math.random(-2,2)},targetPosition,{targetDist,targetDist - 0.7*platoon.MaxWeaponRange/platoon.health}),{4,math.random(-6,6)})
+                        platoon.dest=RUtils.LerpyRotate(platoon.Pos,RUtils.lerpy({platoon.Pos[1]+math.random(-2,2),platoon.Pos[2],platoon.Pos[3]+math.random(-2,2)},targetPosition,{targetDist,targetDist - 0.1*platoon.MaxWeaponRange/platoon.health}),{targetDist,math.random(-6,6)})
                         self:Stop()
                         self:MoveToLocation(platoon.dest, false)
                         for _,v in platoonUnits do
                             if not v or v.Dead then continue end
                             if v.Support and VDist3Sq(v:GetPosition(),platoon.Pos)>8*8 then
                                 IssueClearCommands({v})
-                                IssueMove({v},RUtils.lerpy(platoon.home,platoon.Pos,{VDist3(v:GetPosition(),platoon.Pos),3}))
+                                IssueMove({v},RUtils.lerpy(platoon.Pos,platoon.home,{VDist3(v:GetPosition(),platoon.Pos),3}))
                                 WaitTicks(1)
                                 continue
                             end
-                            if v.Sniper or v:GetHealthPercent()<0.5 then
+                            if v.Sniper and VDist3Sq(v:GetPosition(),targetPosition)<v.MaxWeaponRange*v.MaxWeaponRange or GetWeightedHealthRatio(v)<0.5 then
                                 local upos=v:GetPosition()
                                 local tdist=VDist2(targetPosition[1],targetPosition[3],upos[1],upos[3])
-                                local smartPos = RUtils.lerpy({upos[1]+math.random(-2,2),upos[2],upos[3]+math.random(-2,2)},targetPosition,{tdist,tdist - v.MaxWeaponRange/v:GetHealthPercent()})
+                                local smartPos = RUtils.lerpy({upos[1]+math.random(-2,2),upos[2],upos[3]+math.random(-2,2)},targetPosition,{tdist,(tdist - v.MaxWeaponRange/math.max(GetWeightedHealthRatio(v),0.7))/2})
                                 smartPos = {smartPos[1]+math.random(-1,1),smartPos[2],smartPos[3]+math.random(-1,1)}
-                                local strafeshift=RUtils.LerpyRotate(upos,smartPos,{4,math.random(-4,4)})
+                                local strafeshift=RUtils.LerpyRotate(upos,smartPos,{4,math.random(-2,2)})
                                 IssueClearCommands({v})
                                 IssueMove({v},strafeshift)
                                 WaitTicks(1)
-                            else
+                            --[[else
                                 local upos=v:GetPosition()
                                 local tdist=VDist2(targetPosition[1],targetPosition[3],upos[1],upos[3])
-                                local smartPos = RUtils.lerpy({upos[1]+math.random(-2,2),upos[2],upos[3]+math.random(-2,2)},targetPosition,{tdist,tdist - (1-math.random()/2)*v.MaxWeaponRange/v:GetHealthPercent()})
+                                local strafeshift=RUtils.LerpyRotate(upos,targetPosition,{tdist,math.random(-5,5)})
+                                local smartPos = RUtils.lerpy({upos[1]+math.random(-2,2),upos[2],upos[3]+math.random(-2,2)},strafeshift,{tdist,tdist - (1/2)*v.MaxWeaponRange/math.max(v:GetHealthPercent(),0.7)})
                                 smartPos = {smartPos[1]+math.random(-2,2),smartPos[2],smartPos[3]+math.random(-2,2)}
-                                local strafeshift=RUtils.LerpyRotate(upos,smartPos,{3,math.random(-4,4)})
                                 IssueClearCommands({v})
-                                IssueMove({v},strafeshift)
-                                WaitTicks(1)
+                                IssueMove({v},smartPos)
+                                WaitTicks(1)]]
                             end
                         end
                         WaitTicks(15)
                     elseif targetDist<platoon.MaxWeaponRange*5 then
                         platoon.dest={targetPosition[1]+math.random(-4,4),targetPosition[2],targetPosition[3]+math.random(-4,4)}
                         self:Stop()
-                        self:AggressiveMoveToLocation(platoon.dest)
-                        WaitTicks(30)
+                        self:MoveToLocation(platoon.dest, false)
+                        WaitTicks(10)
                     else
                         platoon.dest={targetPosition[1]+math.random(-4,4),targetPosition[2],targetPosition[3]+math.random(-4,4)}
                         self:Stop()
-                        self:AggressiveMoveToLocation(platoon.dest)
-                        WaitTicks(30)
+                        self:MoveToLocation(platoon.dest, false)
+                        WaitTicks(10)
                     end
                 else
                     local targetPosition=target:GetPosition()
@@ -6614,30 +6779,34 @@ Platoon = Class(RNGAIPlatoon) {
                             if not v or v.Dead then continue end
                             if v.Support and VDist3Sq(v:GetPosition(),platoon.Pos)>8*8 then
                                 IssueClearCommands({v})
-                                IssueMove({v},RUtils.lerpy(platoon.home,platoon.Pos,{VDist3(v:GetPosition(),platoon.Pos),3}))
+                                IssueMove({v},RUtils.lerpy(platoon.Pos,platoon.home,{VDist3(v:GetPosition(),platoon.Pos),3}))
                                 WaitTicks(1)
                                 continue
                             end
                             local upos=v:GetPosition()
                             local tdist=VDist2(targetPosition[1],targetPosition[3],upos[1],upos[3])
-                            smartPos = RUtils.lerpy({upos[1]+math.random(-2,2),upos[2],upos[3]+math.random(-2,2)},targetPosition,{tdist,tdist - v.MaxWeaponRange/v:GetHealthPercent()})
+                            strafeshift=RUtils.LerpyRotate(upos,targetPosition,{tdist,math.random(-6,6)})
+                            smartPos = RUtils.lerpy({upos[1]+math.random(-2,2),upos[2],upos[3]+math.random(-2,2)},strafeshift,{tdist,tdist - v.MaxWeaponRange/math.max(GetWeightedHealthRatio(v),0.7)})
                             smartPos = {smartPos[1]+math.random(-1,1),smartPos[2],smartPos[3]+math.random(-1,1)}
-                            strafeshift=RUtils.LerpyRotate(upos,smartPos,{4,math.random(-6,6)})
                             IssueClearCommands({v})
-                            IssueMove({v},strafeshift)
+                            IssueMove({v},smartPos)
                             WaitTicks(1)
                         end
-                        WaitTicks(45)
+                        WaitTicks(25)
                     elseif targetDist<platoon.MaxWeaponRange*5 then
                         platoon.dest={targetPosition[1]+math.random(-4,4),targetPosition[2],targetPosition[3]+math.random(-4,4)}
                         self:Stop()
-                        self:AggressiveMoveToLocation(platoon.dest)
-                        WaitTicks(30)
+                        self:MoveToLocation(platoon.dest, false)
+                        WaitTicks(10)
                     else
+                        if VDist3Sq(platoon.dest,targetPosition)>100 then
                         platoon.dest={targetPosition[1]+math.random(-4,4),targetPosition[2],targetPosition[3]+math.random(-4,4)}
                         self:Stop()
-                        self:AggressiveMoveToLocation(platoon.dest)
-                        WaitTicks(30)
+                        self:MoveToLocation(platoon.dest, false)
+                            WaitTicks(10)
+                        else
+                            WaitTicks(20)
+                        end
                     end
                 end
             end
@@ -6837,19 +7006,26 @@ Platoon = Class(RNGAIPlatoon) {
         while not platoon.dead and PlatoonExists(aiBrain, self) do
             if not platoon.Pos then WaitTicks(10) continue end
             if not platoon.pathretreat and not platoon.navigating then WaitTicks(20) continue end
-            if not platoon.path or VDist3Sq(platoon.path[table.getn(platoon.path)],platoon.Pos)<platoon.MaxWeaponRange*platoon.MaxWeaponRange then platoon.pathretreat=nil platoon.navigating=nil WaitTicks(20) continue end
+            if not platoon.path or VDist3Sq(platoon.path[table.getn(platoon.path)],platoon.Pos)<50*50 then platoon.pathretreat=nil platoon.navigating=nil WaitTicks(20) continue end
             if platoon.navigating then
                 local enemy=self:FindClosestUnit('Attack', 'Enemy', true, categories.ALLUNITS - categories.NAVAL - categories.AIR - categories.WALL)
                 if not enemy then
                 else
-                if VDist3Sq(enemy:GetPosition(),self:GetPlatoonPosition())<platoon.MaxWeaponRange*platoon.MaxWeaponRange*3 then
-                    platoon.navigating=false
-                    platoon.path=nil
-                    WaitTicks(20)
-                    continue
+                    if VDist3Sq(enemy:GetPosition(),self:GetPlatoonPosition())<platoon.MaxWeaponRange*platoon.MaxWeaponRange*3 then
+                        platoon.navigating=false
+                        platoon.path=nil
+                        WaitTicks(20)
+                        continue
+                    end
                 end
             end
+            if platoon.dest and not AIAttackUtils.CanGraphTo(AIAttackUtils.GetMostRestrictiveLayer(platoon),platoon.dest,'Land') or platoon.path and GetTerrainHeight(platoon.path[table.getn(platoon.path)][1],platoon.path[table.getn(platoon.path)][3])<GetSurfaceHeight(platoon.path[table.getn(platoon.path)][1],platoon.path[table.getn(platoon.path)][3]) then
+                platoon.navigating=false
+                platoon.path=nil
+                WaitTicks(20)
+                continue
             end
+            self:CHPMergePlatoon(20)
             platoon.Pos=self:GetPlatoonPosition() 
             local platoonNum=table.getn(platoonUnits)
             local spread=0
@@ -6861,25 +7037,25 @@ Platoon = Class(RNGAIPlatoon) {
                         self:ForkThread(self.RemoveSingleUnit,aiBrain,v)
                         continue
                     end
-                    if VDist3Sq(v:GetPosition(),platoon.Pos)>v.MaxWeaponRange/3*v.MaxWeaponRange/3+platoonNum then
+                    if VDist3Sq(v:GetPosition(),platoon.Pos)>v.MaxWeaponRange/3*v.MaxWeaponRange/3+platoonNum*platoonNum then
                         --spread=spread+VDist3Sq(v:GetPosition(),platoon.Pos)/v.MaxWeaponRange/v.MaxWeaponRange
                         --snum=snum+1
                         ---[[
                         if platoon.dest then
                             IssueClearCommands({v})
                             if v.Sniper then
-                                IssueMove({v},RUtils.lerpy(platoon.Pos,platoon.dest,{VDist3(platoon.dest,platoon.Pos),v.MaxWeaponRange/10+math.sqrt(platoonNum)}))
+                                IssueMove({v},RUtils.lerpy(platoon.Pos,platoon.dest,{VDist3(platoon.dest,platoon.Pos),v.MaxWeaponRange/7+math.sqrt(platoonNum)}))
                             else
-                                IssueMove({v},RUtils.lerpy(platoon.Pos,platoon.dest,{VDist3(platoon.dest,platoon.Pos),v.MaxWeaponRange/6+math.sqrt(platoonNum)}))
+                                IssueMove({v},RUtils.lerpy(platoon.Pos,platoon.dest,{VDist3(platoon.dest,platoon.Pos),v.MaxWeaponRange/4+math.sqrt(platoonNum)}))
                             end
                             spread=spread+VDist3Sq(v:GetPosition(),platoon.Pos)/v.MaxWeaponRange/v.MaxWeaponRange
                             snum=snum+1
                         else
                             IssueClearCommands({v})
                             if v.Sniper or v.Support then
-                                IssueMove({v},RUtils.lerpy(platoon.Pos,platoon.home,{VDist3(platoon.home,platoon.Pos),v.MaxWeaponRange/10+math.sqrt(platoonNum)}))
+                                IssueMove({v},RUtils.lerpy(platoon.Pos,platoon.home,{VDist3(platoon.home,platoon.Pos),v.MaxWeaponRange/7+math.sqrt(platoonNum)}))
                             else
-                                IssueMove({v},RUtils.lerpy(platoon.Pos,platoon.home,{VDist3(platoon.home,platoon.Pos),v.MaxWeaponRange/6+math.sqrt(platoonNum)}))
+                                IssueMove({v},RUtils.lerpy(platoon.Pos,platoon.home,{VDist3(platoon.home,platoon.Pos),v.MaxWeaponRange/4+math.sqrt(platoonNum)}))
                             end
                             spread=spread+VDist3Sq(v:GetPosition(),platoon.Pos)/v.MaxWeaponRange/v.MaxWeaponRange
                             snum=snum+1
@@ -6887,7 +7063,7 @@ Platoon = Class(RNGAIPlatoon) {
                     end
                 end
             end
-            if spread>0 then
+            if spread>5 then
                 WaitTicks(math.ceil(math.sqrt(spread+10)*5))
             end
             platoonUnits = GetPlatoonUnits(self)
@@ -6910,17 +7086,23 @@ Platoon = Class(RNGAIPlatoon) {
             if not PlatoonExists(aiBrain, self) then
                 return
             end
-            WaitTicks(30)
+            WaitTicks(35)
             continue
         end
     end,
     ShowUnitWeaponTargetRNG = function(self, unit, weapon, target)
         -- Show a line to the target from the weapon for a short time
+        local display=false
+        if ScenarioInfo.Options.AIDebugDisplay == 'displayOn' then
+            display=true
+        end
         for _=0,10 do
             if unit.Dead then return end
             if target and not target.Dead then
                 weapon:SetTargetEntity(target)
-                DrawLinePop(unit:GetPosition(),target:GetPosition(),'ddFF0000')
+                if display then
+                    DrawLinePop(unit:GetPosition(),target:GetPosition(),'ddFF0000')
+                end
             end
             WaitTicks(2)
         end
@@ -6966,9 +7148,10 @@ Platoon = Class(RNGAIPlatoon) {
                 else
                     reclaimcat = cat
                 end
-                reclaimables = aiBrain:GetListOfUnits(reclaimcat, false)
+                reclaimables = aiBrain:GetListOfUnits(reclaimcat, false, true)
+                table.sort(reclaimables,function(a,b) return VDist3Sq(unitPos,a:GetPosition())<VDist3Sq(unitPos,b:GetPosition()) end)
                 for k,v in reclaimables do
-                    if not v.Dead and (not reclaimunit or VDist3(unitPos, v:GetPosition()) < distance) and unitPos and not v:IsUnitState('Upgrading') then
+                    if not v.Dead and (not reclaimunit or VDist3(unitPos, v:GetPosition()) < distance) and unitPos and not v:IsUnitState('Upgrading') and v:GetFractionComplete() == 1 then
                         if v:IsUnitState('Upgrading') then table.remove(reclaimables,k) end
                         reclaimunit = v
                         distance = VDist3(unitPos, v:GetPosition())
@@ -6983,7 +7166,7 @@ Platoon = Class(RNGAIPlatoon) {
                 IssueReclaim(self:GetPlatoonUnits(), reclaimunit)
                 repeat
                     WaitSeconds(2)
-                    if reclaimunit:IsUnitState('Upgrading') then break end
+                    if reclaimunit and not reclaimunit.Dead and reclaimunit:IsUnitState('Upgrading') then break end
                     if not aiBrain:PlatoonExists(self) then
                         return
                     end
@@ -6995,6 +7178,8 @@ Platoon = Class(RNGAIPlatoon) {
                         end
                     end
                 until allIdle
+                self:PlatoonDisband()
+                return
             elseif not reclaimunit or counter >= 5 then
                 self:PlatoonDisband()
                 return
@@ -7005,13 +7190,16 @@ Platoon = Class(RNGAIPlatoon) {
         end
     end,
     MexBuildAIRNG = function(self)
-        WaitTicks(math.random(10,40))
+        WaitTicks(math.random(1,4))
         local aiBrain = self:GetBrain()
         local platoonUnits = GetPlatoonUnits(self)
         local armyIndex = aiBrain:GetArmyIndex()
         local cons = self.PlatoonData.Construction
         local buildingTmpl, buildingTmplFile, baseTmpl, baseTmplFile, baseTmplDefault
         local eng=platoonUnits[1]
+        if not eng.ProcessBuild then eng.ProcessBuild=true end
+        if eng.platoonactive then return end
+        eng.platoonactive=true
         self:Stop()
         if not eng or eng.Dead then
             WaitTicks(1)
@@ -7028,11 +7216,7 @@ Platoon = Class(RNGAIPlatoon) {
         baseTmplDefault = import('/lua/BaseTemplates.lua')
         buildingTmpl = buildingTmplFile[(cons.BuildingTemplate or 'BuildingTemplates')][factionIndex]
         baseTmpl = baseTmplFile[(cons.BaseTemplate or 'BaseTemplates')][factionIndex]
-
-        --LOG("*AI DEBUG: Setting up Callbacks for " .. eng.Sync.id)
-        self.SetupEngineerCallbacksRNG(eng)
         local whatToBuild = aiBrain:DecideWhatToBuild(eng, 'T1Resource', buildingTmpl)
-        -- wait in case we're still on a base
         if not eng.Dead then
             local count = 0
             while eng:IsUnitState('Attached') and count < 2 do
@@ -7040,25 +7224,32 @@ Platoon = Class(RNGAIPlatoon) {
                 count = count + 1
             end
         end
-        while not aiBrain.expansionMex do WaitSeconds(2) end
+        while not aiBrain.expansionMex do DrawCircle(eng:GetPosition(),3,'FFFFFF00') WaitTicks(2) end
         local markerTable=table.copy(aiBrain.expansionMex)
         if eng.Dead then self:PlatoonDisband() end
         for i,v in markerTable do
             if not AIAttackUtils.CanGraphTo(eng,v.Position,'Amphibious') then table.remove(markerTable,i) end
         end
         while eng and not eng.Dead do
+            WaitTicks(2)
             local platoonPos=self:GetPlatoonPosition()
             table.sort(markerTable,function(a,b) return VDist2Sq(a.Position[1],a.Position[3],platoonPos[1],platoonPos[3])/VDist3Sq(aiBrain.emanager.enemy.Position,a.Position)/a.priority/a.priority<VDist2Sq(b.Position[1],b.Position[3],platoonPos[1],platoonPos[3])/VDist3Sq(aiBrain.emanager.enemy.Position,b.Position)/b.priority/b.priority end)
             local currentmexpos=nil
             local curindex=nil
+            eng.mexesqueued=0
             for i,v in markerTable do
-                if aiBrain:CanBuildStructureAt('ueb1103', v.Position) then
-                    currentmexpos=v.Position
+                if aiBrain:CanBuildStructureAt(whatToBuild, v.Position) then
+                    if v.Position then
+                        currentmexpos=v.Position
+                    else
+                        currentmexpos=v.position
+                    end
                     curindex=i
                     break
+                else
                 end
             end
-            if not currentmexpos then self:PlatoonDisband() end
+            if not currentmexpos then IssueClearCommands({eng}) continue end
             if not AIUtils.EngineerMoveWithSafePathCHP(aiBrain, eng, currentmexpos, whatToBuild) then table.remove(markerTable,curindex) continue end
             local firstmex=currentmexpos
             local initialized=nil
@@ -7066,38 +7257,67 @@ Platoon = Class(RNGAIPlatoon) {
                 if not currentmexpos then break end
                 local bool,markers=MABC.CanBuildOnMassEng2(aiBrain, currentmexpos, 30)
                 if bool then
-                    --LOG('We can build on a mass marker within 30')
-                    --local massMarker = RUtils.GetClosestMassMarkerToPos(aiBrain, waypointPath)
-                    --LOG('Mass Marker'..repr(massMarker))
-                    --LOG('Attempting second mass marker')
                     for _,massMarker in markers do
-                    RUtils.EngineerTryReclaimCaptureArea(aiBrain, eng, massMarker.Position)
-                    AIUtils.EngineerTryRepair(aiBrain, eng, whatToBuild, massMarker.Position)
-                    aiBrain:BuildStructure(eng, whatToBuild, {massMarker.Position[1], massMarker.Position[3], 0}, false)
-                    local newEntry = {whatToBuild, {massMarker.Position[1], massMarker.Position[3], 0}, false,Position=massMarker.Position}
-                    table.insert(eng.EngineerBuildQueue, newEntry)
-                    currentmexpos=massMarker.Position
+                        RUtils.EngineerTryReclaimCaptureArea(aiBrain, eng, massMarker.Position)
+                        AIUtils.EngineerTryRepair(aiBrain, eng, whatToBuild, massMarker.Position)
+                        aiBrain:BuildStructure(eng, whatToBuild, {massMarker.Position[1], massMarker.Position[3], 0}, false)
+                        eng.mexesqueued=eng.mexesqueued+1
+                        local newEntry = {whatToBuild, {massMarker.Position[1], massMarker.Position[3], 0}, false,Position=massMarker.Position}
+                        table.insert(eng.EngineerBuildQueue, newEntry)
+                        currentmexpos=massMarker.Position
                     end
                 else
                     break
                 end
             end
-            LOG('engineer command queue'..repr(eng:GetCommandQueue()))
-            while not eng.Dead and 0<table.getn(eng:GetCommandQueue()) or eng:IsUnitState('Building') or eng:IsUnitState("Moving") do
-                if eng:IsUnitState("Moving") and not initialized and VDist3Sq(self:GetPlatoonPosition(),firstmex)<12*12 then
-                    IssueClearCommands({eng})
-                    for _,v in eng.EngineerBuildQueue do
-                        RUtils.EngineerTryReclaimCaptureArea(aiBrain, eng, v.Position)
-                        AIUtils.EngineerTryRepair(aiBrain, eng, v[1], v.Position)
-                        aiBrain:BuildStructure(eng, v[1],v[2],v[3])
-                    end
-                    initialized=true
-                end
-                WaitTicks(20)
+            if eng.mexesqueued<1 then IssueClearCommands({eng}) continue end
+            WaitTicks(2)
+            while eng and not eng.Dead and ( not eng.Dead and not eng:IsIdleState() or eng:GetCommandQueue() and table.getn(eng:GetCommandQueue())>0 or eng:IsUnitState('Building') or eng:IsUnitState("Moving")) do
+                WaitTicks(2)
             end
+            LOG(repr(eng.EngineerBuildQueue))
             eng.EngineerBuildQueue={}
             IssueClearCommands({eng})
             WaitTicks(20)
+            eng.platoonactive=false
+        end
+        eng.platoonactive=false
+    end,
+    EngineerHasErrorRNG = function(eng)
+        for _=0,10 do
+            for _=0,5 do
+                DrawCircle(eng:GetPosition(),3,'FFFF0000')
+                WaitTicks(2)
+            end
+            WaitTicks(5)
+        end
+    end,
+    EngineerTemporaryLineRender = function(eng,pos,color,pos2)
+        if not pos2 then
+            for _=0,10 do
+                for _=0,5 do
+                    DrawLinePop(eng:GetPosition(),pos,color)
+                    WaitTicks(2)
+                end
+                WaitTicks(5)
+            end
+        else
+            for _=0,10 do
+                for _=0,5 do
+                    DrawLinePop(pos,pos2,color)
+                    WaitTicks(2)
+                end
+                WaitTicks(5)
+            end
+        end
+    end,
+    EngineerTemporaryCircleRender = function(eng,pos,color,rad)
+        for _=0,10 do
+            for _=0,5 do
+                DrawCircle(pos,rad or 5,color)
+                WaitTicks(2)
+            end
+            WaitTicks(5)
         end
     end,
     ProcessBuildMexCommandRNG = function(eng, removeLastBuild)

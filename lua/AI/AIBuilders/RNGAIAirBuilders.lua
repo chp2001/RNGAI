@@ -308,7 +308,7 @@ BuilderGroup {
         BuilderName = 'RNGAI T3 Air Queue',
         PlatoonTemplate = 'RNGAIT3AirQueue',
         Priority = 850,
-        PriorityFunction = AirDefenseMode,
+        --PriorityFunction = AirDefenseMode,
         BuilderType = 'Air',
         BuilderConditions = {
             { UCBC, 'FactoryGreaterAtLocationRNG', { 'LocationType', 0, categories.FACTORY * categories.AIR * categories.TECH3 }},
@@ -323,14 +323,14 @@ BuilderGroup {
     Builder {
         BuilderName = 'RNGAI T3 Air Attack Queue',
         PlatoonTemplate = 'RNGAIT3AirAttackQueue',
-        Priority = 0,
-        PriorityFunction = AirAttackMode,
+        Priority = 849,
+        --PriorityFunction = AirAttackMode,
         BuilderType = 'Air',
         BuilderConditions = {
             { UCBC, 'FactoryGreaterAtLocationRNG', { 'LocationType', 0, categories.FACTORY * categories.AIR * categories.TECH3 }},
             { UCBC, 'HaveGreaterThanUnitsWithCategory', { 0, categories.STRUCTURE * categories.ENERGYPRODUCTION * categories.TECH3 }},
-            { EBC, 'GreaterThanEconStorageRatioRNG', { 0.04, 0.80}},
-            { EBC, 'GreaterThanEconEfficiencyRNG', { 0.8, 0.8 }},
+            { EBC, 'GreaterThanEconStorageRatioRNG', { -0.04, 0.80}},
+            { EBC, 'GreaterThanEconEfficiencyRNG', { 0.5, 0.8 }},
         },
         BuilderData = {
             TechLevel = 3

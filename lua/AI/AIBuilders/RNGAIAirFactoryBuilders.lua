@@ -119,8 +119,8 @@ BuilderGroup {
         --PriorityFunction = LandMode,
         BuilderConditions = {
             { UCBC, 'ArmyManagerBuild', { 'Air', 'T2', 'fighter'} },
-            { EBC, 'GreaterThanEconStorageRatioRNG', { 0.02, 0.1, 'AIR'}},
-            { EBC, 'GreaterThanEconEfficiencyRNG', { 0.75, 0.8 }},
+            --{ EBC, 'GreaterThanEconStorageRatioRNG', { 0.02, 0.1, 'AIR'}},
+            --{ EBC, 'GreaterThanEconEfficiencyRNG', { 0.75, 0.8 }},
             { UCBC, 'UnitCapCheckLess', { .8 } },
         },
         BuilderType = 'Air',

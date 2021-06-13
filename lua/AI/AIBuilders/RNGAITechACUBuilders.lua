@@ -268,6 +268,11 @@ BuilderGroup {
         BuilderData = {
             Construction = {
                 BuildClose = true,
+                AdjacencyPriority = {
+                    categories.MASSEXTRACTION * categories.TECH1,
+                    categories.ENERGYPRODUCTION * categories.STRUCTURE * categories.TECH1 - categories.HYDROCARBON,
+                    categories.FACTORY * categories.LAND,
+                },
                 BuildStructures = {
                     'T1LandFactory',
                 },
@@ -292,6 +297,11 @@ BuilderGroup {
         BuilderData = {
             Construction = {
                 BuildClose = true,
+                AdjacencyPriority = {
+                    categories.MASSEXTRACTION * categories.TECH1,
+                    categories.ENERGYPRODUCTION * categories.STRUCTURE * categories.TECH1 - categories.HYDROCARBON,
+                    categories.FACTORY * categories.LAND,
+                },
                 BuildStructures = {
                     'T1LandFactory',
                 },
@@ -316,6 +326,13 @@ BuilderGroup {
         BuilderData = {
             Construction = {
                 BuildClose = true,
+                AdjacencyPriority = {
+                    categories.ENERGYPRODUCTION * categories.STRUCTURE * categories.TECH3,
+                    categories.ENERGYPRODUCTION * categories.STRUCTURE * categories.TECH2,
+                    categories.HYDROCARBON,
+                    categories.ENERGYPRODUCTION * categories.STRUCTURE * categories.TECH1,
+                    categories.FACTORY * categories.AIR,
+                },
                 BuildStructures = {
                     'T1AirFactory',
                 },
@@ -342,6 +359,13 @@ BuilderGroup {
         BuilderData = {
             Construction = {
                 BuildClose = true,
+                AdjacencyPriority = {
+                    categories.ENERGYPRODUCTION * categories.STRUCTURE * categories.TECH3,
+                    categories.ENERGYPRODUCTION * categories.STRUCTURE * categories.TECH2,
+                    categories.HYDROCARBON,
+                    categories.ENERGYPRODUCTION * categories.STRUCTURE * categories.TECH1,
+                    categories.FACTORY * categories.AIR,
+                },
                 BuildStructures = {
                     'T1AirFactory',
                 },
@@ -384,6 +408,16 @@ BuilderGroup {
             DesiresAssist = false,
             Construction = {
                 AdjacencyCategory = categories.FACTORY * categories.STRUCTURE * (categories.AIR + categories.LAND),
+                AdjacencyPriority = {
+                    categories.FACTORY * categories.AIR,
+                    categories.RADAR * categories.STRUCTURE,
+                    categories.MASSEXTRACTION * categories.TECH1,
+                    categories.FACTORY * categories.LAND,
+                    categories.ENERGYSTORAGE,   
+                    categories.INDIRECTFIRE * categories.DEFENSE,
+                    categories.SHIELD * categories.STRUCTURE,
+                    categories.ENERGYPRODUCTION * categories.STRUCTURE,
+                },
                 BuildStructures = {
                     'T1EnergyProduction',
                 },
@@ -415,6 +449,16 @@ BuilderGroup {
             Construction = {
                 AdjacencyCategory = categories.FACTORY * categories.STRUCTURE * (categories.AIR + categories.LAND),
                 AvoidCategory = categories.ENERGYPRODUCTION * categories.TECH1,
+                AdjacencyPriority = {
+                    categories.FACTORY * categories.AIR,
+                    categories.RADAR * categories.STRUCTURE,
+                    categories.MASSEXTRACTION * categories.TECH1,
+                    categories.FACTORY * categories.LAND,
+                    categories.ENERGYSTORAGE,   
+                    categories.INDIRECTFIRE * categories.DEFENSE,
+                    categories.SHIELD * categories.STRUCTURE,
+                    categories.ENERGYPRODUCTION * categories.STRUCTURE,
+                },
                 maxUnits = 1,
                 maxRadius = 3,
                 BuildStructures = {
@@ -444,6 +488,16 @@ BuilderGroup {
             Construction = {
                 AdjacencyCategory = (categories.STRUCTURE * categories.SHIELD) + (categories.FACTORY * (categories.TECH3 + categories.TECH2 + categories.TECH1)),
                 AvoidCategory = categories.ENERGYPRODUCTION * categories.TECH2,
+                AdjacencyPriority = {
+                    categories.FACTORY * categories.AIR,
+                    categories.RADAR * categories.STRUCTURE,
+                    categories.MASSEXTRACTION * categories.TECH1,
+                    categories.FACTORY * categories.LAND,
+                    categories.ENERGYSTORAGE,   
+                    categories.INDIRECTFIRE * categories.DEFENSE,
+                    categories.SHIELD * categories.STRUCTURE,
+                    categories.ENERGYPRODUCTION * categories.STRUCTURE,
+                },
                 maxUnits = 1,
                 maxRadius = 10,
                 BuildStructures = {
@@ -472,6 +526,16 @@ BuilderGroup {
             Construction = {
                 AdjacencyCategory = (categories.STRUCTURE * categories.SHIELD) + (categories.FACTORY * (categories.TECH3 + categories.TECH2 + categories.TECH1)),
                 AvoidCategory = categories.ENERGYPRODUCTION * categories.TECH3,
+                AdjacencyPriority = {
+                    categories.FACTORY * categories.AIR,
+                    categories.RADAR * categories.STRUCTURE,
+                    categories.MASSEXTRACTION * categories.TECH1,
+                    categories.FACTORY * categories.LAND,
+                    categories.ENERGYSTORAGE,   
+                    categories.INDIRECTFIRE * categories.DEFENSE,
+                    categories.SHIELD * categories.STRUCTURE,
+                    categories.ENERGYPRODUCTION * categories.STRUCTURE,
+                },
                 maxUnits = 1,
                 maxRadius = 10,
                 BuildStructures = {

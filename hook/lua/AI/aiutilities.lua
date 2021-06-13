@@ -662,8 +662,8 @@ function EngineerMoveWithSafePathCHP(aiBrain, eng, destination, whatToBuildM)
     end
     local bUsedTransports = false
     -- Increase check to 300 for transports
-    if (not result and reason ~= 'PathOK') or VDist2Sq(pos[1], pos[3], destination[1], destination[3]) > 200 * 200
-    and eng.PlatoonHandle and not EntityCategoryContains(categories.COMMAND, eng) then
+    if (not result and reason ~= 'PathOK') or VDist2Sq(pos[1], pos[3], destination[1], destination[3]) > 250 * 250
+    and eng.PlatoonHandle and not EntityCategoryContains(categories.COMMAND, eng) and aiBrain:GetCurrentUnits(categories.TRANSPORTATION * categories.AIR)>=1 then
         -- If we can't path to our destination, we need, rather than want, transports
         local needTransports = not result and reason ~= 'PathOK'
         if VDist2Sq(pos[1], pos[3], destination[1], destination[3]) > 200 * 200 then
@@ -692,7 +692,7 @@ function EngineerMoveWithSafePathCHP(aiBrain, eng, destination, whatToBuildM)
             path, reason = AIAttackUtils.EngineerGenerateSafePathToRNG(aiBrain, 'Amphibious', pos, destination)
         end
         if path then
-            if not whatToBuildM then
+            --[[if not whatToBuildM then
                 local cons = eng.PlatoonHandle.PlatoonData.Construction
                 local buildingTmpl, buildingTmplFile, baseTmpl, baseTmplFile, baseTmplDefault
                 local factionIndex = aiBrain:GetFactionIndex()
@@ -702,12 +702,13 @@ function EngineerMoveWithSafePathCHP(aiBrain, eng, destination, whatToBuildM)
                 buildingTmpl = buildingTmplFile[(cons.BuildingTemplate or 'BuildingTemplates')][factionIndex]
                 baseTmpl = baseTmplFile[(cons.BaseTemplate or 'BaseTemplates')][factionIndex]
                 whatToBuildM = aiBrain:DecideWhatToBuild(eng, 'T1Resource', buildingTmpl)
-            end
+            end]]
             --LOG('* AI-RNG: EngineerMoveWithSafePath(): path 0 true')
             local pathSize = table.getn(path)
             -- Move to way points (but not to destination... leave that for the final command)
+            local k=1
             for widx, waypointPath in path do
-                if widx>=3 then
+                if whatToBuildM and widx>=3 then
                     local bool,markers=MABC.CanBuildOnMassEng2(aiBrain, waypointPath, 30)
                     if bool then
                         --LOG('We can build on a mass marker within 30')
@@ -718,9 +719,14 @@ function EngineerMoveWithSafePathCHP(aiBrain, eng, destination, whatToBuildM)
                         RUtils.EngineerTryReclaimCaptureArea(aiBrain, eng, massMarker.Position)
                         EngineerTryRepair(aiBrain, eng, whatToBuildM, massMarker.Position)
                         aiBrain:BuildStructure(eng, whatToBuildM, {massMarker.Position[1], massMarker.Position[3], 0}, false)
-                        local newEntry = {whatToBuildM, {massMarker.Position[1], massMarker.Position[3], 0}, false}
-                        table.insert(eng.EngineerBuildQueue, newEntry)
+                        if eng.mexesqueued then
+                            eng.mexesqueued=eng.mexesqueued+1
                         end
+                        local newEntry = {whatToBuildM, {massMarker.Position[1], massMarker.Position[3], 0}, false}
+                        table.insert(eng.EngineerBuildQueue,k, newEntry)
+                        k=k+1
+                        end
+                        continue
                     end
                 end
                 if (widx - math.floor(widx/2)*2)==0 or VDist3Sq(destination,waypointPath)<40*40 then continue end

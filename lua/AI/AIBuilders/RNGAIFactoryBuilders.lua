@@ -1451,6 +1451,13 @@ BuilderGroup {
                 BuildClose = false,
                 Location = 'LocationType',
                 AdjacencyCategory = categories.ENERGYPRODUCTION,
+                AdjacencyPriority = {
+                    categories.MASSEXTRACTION,
+                    categories.MASSPRODUCTION * categories.STRUCTURE * categories.TECH3,
+                    categories.ENERGYPRODUCTION * categories.STRUCTURE * categories.TECH3,
+                    categories.ENERGYPRODUCTION * categories.STRUCTURE * categories.TECH2,
+                    categories.GATE,
+                },
                 BuildStructures = {
                     'T3QuantumGate',
                 },

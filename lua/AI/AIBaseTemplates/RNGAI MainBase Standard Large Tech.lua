@@ -160,7 +160,7 @@ BaseBuilderTemplate {
         if personality == 'RNGTech' and mapSizeX > 1000 and mapSizeZ > 1000 or personality == 'RNGTechcheat' and mapSizeX > 1000 and mapSizeZ > 1000 then
             --LOG('* AI-RNG: ### M-FirstBaseFunction '..personality)
             --LOG('* AI-RNG: Map size is large', mapSizeX, mapSizeZ)
-            return 1000, 'RNGTech'
+            return 900, 'RNGTech'
         end
         return -1
     end,

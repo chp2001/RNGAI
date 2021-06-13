@@ -3172,10 +3172,11 @@ AIBrain = Class(RNGAIBrainClass) {
     end,
     HeavyEconomyRNG = function(self)
         if ArmyIsCivilian(self:GetArmyIndex()) then return end
-        WaitTicks(math.random(80,100))
+        WaitTicks(math.random(3,50))
         LOG('Heavy Economy thread starting '..self.Nickname)
         self:ForkThread(RUtils.CountSoonMassSpotsRNG)
         self:ForkThread(RUtils.GetAvgSpendPerFactoryTypeRNG)
+        self:ForkThread(RUtils.GetFutureMassRNG)
         -- This section is for debug
         ---[[
             self.cmanager = {
@@ -3341,13 +3342,13 @@ AIBrain = Class(RNGAIBrainClass) {
                             T2 = {
                                 tank=55,
                                 mml=5,
-                                bot=20,
-                                aa=10,
-                                shield=10
+                                bot=45,
+                                aa=15,
+                                shield=15
                             },
                             T3 = {
                                 tank=30,
-                                armoured=40,
+                                armoured=50,
                                 mml=5,
                                 arty=15,
                                 aa=10
@@ -3392,7 +3393,7 @@ AIBrain = Class(RNGAIBrainClass) {
                                 tank=45,
                                 arty=15,
                                 aa=10,
-                                sniper=30
+                                sniper=50
                             }
                         },
                         Air = {
@@ -3427,13 +3428,13 @@ AIBrain = Class(RNGAIBrainClass) {
                             T2 = {
                                 tank=55,
                                 mml=5,
-                                bot=25,
+                                bot=45,
                                 aa=10,
                                 stealth=5,
                             },
                             T3 = {
                                 tank=30,
-                                armoured=40,
+                                armoured=50,
                                 arty=15,
                                 aa=10,
                             }
@@ -3474,10 +3475,10 @@ AIBrain = Class(RNGAIBrainClass) {
                             },
                             T3 = {
                                 tank=45,
-                                arty=10,
-                                aa=10,
-                                sniper=30,
-                                shield=5,
+                                arty=5,
+                                aa=15,
+                                sniper=50,
+                                shield=10,
                             }
                         },
                         Air = {

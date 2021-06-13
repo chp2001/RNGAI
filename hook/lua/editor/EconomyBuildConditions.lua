@@ -304,7 +304,7 @@ function FutureProofFactorySpendRatioRNG(aiBrain,uType,ratio,greater)
     end
 end
 function FactorySpendRatioUnitRNG(aiBrain,uType,ratio,greater)
-    if not aiBrain.fmanager.buildpower then return false end
+    if not aiBrain.fmanager.buildpower[uType] or not aiBrain.cmanager.income.r.m then return false end
     if not greater or greater~='greater' then
         if math.random()<ratio/(aiBrain.fmanager.buildpower[uType]/aiBrain.cmanager.income.r.m) then
             return true
@@ -320,7 +320,7 @@ function FactorySpendRatioUnitRNG(aiBrain,uType,ratio,greater)
     end
 end
 function FutureProofFactoryUpgradeSpendRatioRNG(aiBrain,uType,ratio,greater)
-    if not aiBrain.fmanager.uspend then return false end
+    if not aiBrain.fmanager.uspend[uType] or not aiBrain.cmanager.unclaimedmexcount then return false end
     if not greater or greater~='greater' then
         if aiBrain.fmanager.uspend[uType]/(aiBrain.cmanager.income.r.m+2*aiBrain.cmanager.unclaimedmexcount)<ratio then
             return true

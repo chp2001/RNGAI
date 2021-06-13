@@ -50,7 +50,7 @@ BaseBuilderTemplate {
         --'RNGAI Reaction Tanks',
         'RNGAI T3 AttackLandBuilder Small',
         --'RNG Tech InitialBuilder Small',
-        'RNG Tech T3 Land Builder Small',
+        --'RNG Tech T3 Land Builder Small',
         
 
         -- Land Unit Formers T1 --
@@ -91,6 +91,7 @@ BaseBuilderTemplate {
         'RNGAI Air Builder T2 Ratio',
         'RNGAI Air Builder T3 Ratio',
         'RNGAI TransportFactoryBuilders Small',
+        'RNGAI Air Builder T3',
 
         -- Air Unit Formers --
         'RNGAI ScoutAirFormer',
@@ -157,7 +158,7 @@ BaseBuilderTemplate {
     FirstBaseFunction = function(aiBrain)
         local personality = ScenarioInfo.ArmySetup[aiBrain.Name].AIPersonality
         local mapSizeX, mapSizeZ = GetMapSize()
-        if personality == 'RNGTech' and mapSizeX < 1000 and mapSizeZ < 1000 or personality == 'RNGTechcheat' and mapSizeX < 1000 and mapSizeZ < 1000 then
+        if personality == 'RNGTech' or personality == 'RNGTechcheat' then
             --LOG('* AI-RNG: ### M-FirstBaseFunction '..personality)
             --LOG('* AI-RNG: Map size is small', mapSizeX, mapSizeZ)
             return 1000, 'RNGTech'

@@ -2213,13 +2213,20 @@ ThrottledAllocateRNG = function(aiBrain)
         local extractorCount = table.getn(brainExtractors)
         local givemex = 0
         local allyBrains = {}
+        local allycount=0
         for _, v in ArmyBrains do
             local Index = v:GetArmyIndex()
             if IsEnemy(aiBrainIndex, Index) or ArmyIsCivilian(v:GetArmyIndex()) or v.Result=="defeat" then continue end
+            if aiBrain.Nickname==v.Nickname then --this is me
+            else
+                allycount=allycount+1
+            end
             local astartX, astartZ = v:GetArmyStartPos()
             local aiBrainstart = {position={astartX, 0, astartZ},abrain=v,index=Index}
             table.insert(allyBrains,aiBrainstart)
         end
+        if allycount==0 then break else 
+        LOG('allycount '..repr(allycount)) end
         for _, x in brainExtractors do
             if x.Position~=nil then continue end
             x.Position=x:GetPosition()
@@ -2843,6 +2850,13 @@ GrabMarkerDangerRNG = function(aiBrain,marker)
     return brainThreats
 end
 GrabPosDangerRNG = function(aiBrain,pos,radius)
+    local function GetWeightedHealthRatio(unit)
+        if unit.MyShield then
+            return (unit.MyShield:GetHealth()+unit:GetHealth())/(unit.MyShield:GetMaxHealth()+unit:GetMaxHealth())
+        else
+            return unit:GetHealthPercent()
+        end
+    end
     local brainThreats = {ally=0,enemy=0}
     local allyunits=aiBrain:GetUnitsAroundPoint(categories.DIRECTFIRE+categories.INDIRECTFIRE,pos,radius,'Ally')
     local enemyunits=aiBrain:GetUnitsAroundPoint(categories.DIRECTFIRE+categories.INDIRECTFIRE,pos,radius,'Enemy')
@@ -2851,10 +2865,14 @@ GrabPosDangerRNG = function(aiBrain,pos,radius)
             --LOG('Unit Defense is'..repr(v:GetBlueprint().Defense))
             --LOG('Unit ID is '..v.UnitId)
             --bp = v:GetBlueprint().Defense
+            local mult=1
+            if EntityCategoryContains(categories.INDIRECTFIRE,v) then
+                mult=0.3
+            end
             local bp = __blueprints[v.UnitId].Defense
             --LOG(repr(__blueprints[v.UnitId].Defense))
             if bp.SurfaceThreatLevel ~= nil then
-                brainThreats.ally = brainThreats.ally + bp.SurfaceThreatLevel*v:GetHealthPercent()
+                brainThreats.ally = brainThreats.ally + bp.SurfaceThreatLevel*GetWeightedHealthRatio(v)*mult
             end
         end
     end
@@ -2863,10 +2881,14 @@ GrabPosDangerRNG = function(aiBrain,pos,radius)
             --LOG('Unit Defense is'..repr(v:GetBlueprint().Defense))
             --LOG('Unit ID is '..v.UnitId)
             --bp = v:GetBlueprint().Defense
+            local mult=1
+            if EntityCategoryContains(categories.INDIRECTFIRE,v) then
+                mult=0.3
+            end
             local bp = __blueprints[v.UnitId].Defense
             --LOG(repr(__blueprints[v.UnitId].Defense))
             if bp.SurfaceThreatLevel ~= nil then
-                brainThreats.enemy = brainThreats.enemy + bp.SurfaceThreatLevel*v:GetHealthPercent()
+                brainThreats.enemy = brainThreats.enemy + bp.SurfaceThreatLevel*GetWeightedHealthRatio(v)*mult
             end
         end
     end
@@ -2980,7 +3002,7 @@ CountSoonMassSpotsRNG = function(aiBrain)
     end
     local startX, startZ = aiBrain:GetArmyStartPos()
     table.sort(enemies,function(a,b) return VDist2Sq(a.Position[1],a.Position[3],startX,startZ)<VDist2Sq(b.Position[1],b.Position[3],startX,startZ) end)
-    while not aiBrain.cmanager do WaitTicks(20) end
+    while not aiBrain.cmanager do WaitTicks(2) end
     if not aiBrain.expansionMex or not aiBrain.expansionMex[1].priority then
         --initialize expansion priority
         local starts = AIUtils.AIGetMarkerLocations(aiBrain, 'Start Location')
@@ -3173,5 +3195,24 @@ GetAvgSpendPerFactoryTypeRNG = function(aiBrain)
         aiBrain.fmanager.buildpower=facspendtotals
         aiBrain.fmanager.buildpower.total=fspendsum
         WaitTicks(20)
+    end
+end
+GetFutureMassRNG = function(aiBrain)
+    while not aiBrain.smanager do
+        WaitSeconds(20)
+    end
+    aiBrain.smanager.mexupgrade={}
+    local mexupgrades={}
+    while aiBrain.Result ~= "defeat" do
+        local mexes=aiBrain:GetListOfUnits(categories.MASSEXTRACTION * categories.STRUCTURE,false,true)
+        for _=0,30,2 do
+            for i,v in mexes do
+                if not v or v.Dead then table.remove(mexes,i) continue end
+                if v:IsUnitState('Upgrading') then
+                    DrawCircle(v:GetPosition(),4,'FF00FF00')
+                end
+            end
+            WaitTicks(2)
+        end
     end
 end

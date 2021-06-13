@@ -152,6 +152,20 @@ BuilderGroup {
     BuilderGroupName = 'RNG Tech Hero FormBuilders',                           -- BuilderGroupName, initalized from AIBaseTemplates in "\lua\AI\AIBaseTemplates\"
     BuildersType = 'PlatoonFormBuilder',                                        -- BuilderTypes are: EngineerBuilder, FactoryBuilder, PlatoonFormBuilder.
     Builder {
+        BuilderName = 'RNG Tech Spam Early',                              -- Random Builder Name.
+        PlatoonTemplate = 'RNGTECH LandAttack Spam Intelli',                          -- Template Name. 
+        Priority = 800,                                                          -- Priority. 1000 is normal.
+        InstanceCount = 400,                                                      -- Number of platoons that will be formed.
+        BuilderType = 'Any',
+        BuilderConditions = {
+            { UCBC, 'PoolGreaterAtLocation', { 'LocationType', 3, categories.MOBILE * categories.LAND * categories.DIRECTFIRE - categories.ENGINEER - categories.EXPERIMENTAL } },
+        },
+        BuilderData = {
+            UseFormation = 'None',
+            LocationType = 'LocationType',
+            },
+    },
+    Builder {
         BuilderName = 'RNG Tech Hero T3',                              -- Random Builder Name.
         PlatoonTemplate = 'RNGTECH Hero T3',                          -- Template Name. 
         Priority = 1300,                                                          -- Priority. 1000 is normal.

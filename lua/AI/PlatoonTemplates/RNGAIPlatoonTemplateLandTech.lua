@@ -5,7 +5,25 @@
         Responsible for defining a mapping from AIBuilders keys -> Plans (Plans === platoon.lua functions)
 ]]
 
-
+PlatoonTemplate {
+    Name = 'RNGTECH LandAttack Spam Intelli',
+    Plan = 'TruePlatoonRNG', -- The platoon function to use.
+    GlobalSquads = {
+        { categories.MOBILE * categories.LAND * categories.DIRECTFIRE * (categories.TECH1 + categories.TECH2 + categories.TECH3) - categories.ANTIAIR - categories.SCOUT - categories.EXPERIMENTAL - categories.ENGINEER - (categories.SNIPER + categories.xel0305 + categories.xal0305 + categories.xrl0305 + categories.xsl0305 + categories.drl0204 + categories.del0204), -- Type of units.
+          3, -- Min number of units.
+          20, -- Max number of units.
+          'attack', -- platoon types: 'support', 'attack', 'scout',
+          'None' }, -- platoon move formations: 'None', 'AttackFormation', 'GrowthFormation',
+          { categories.MOBILE * categories.LAND * (categories.TECH1 + categories.TECH2 + categories.TECH3) * categories.INDIRECTFIRE - categories.ANTIAIR - categories.SCOUT - categories.EXPERIMENTAL - categories.ENGINEER, -- Type of units.
+          0, -- Min number of units.
+          12, -- Max number of units.
+          'attack', -- platoon types: 'support', 'attack', 'scout',
+          'None' }, -- platoon move formations: 'None', 'AttackFormation', 'GrowthFormation',
+          { categories.LAND * categories.MOBILE * categories.SHIELD - categories.SCOUT - categories.ENGINEER - categories.EXPERIMENTAL, 0, 2, 'guard', 'none' },
+          { categories.LAND * categories.ANTIAIR - categories.EXPERIMENTAL, 0, 3, 'guard', 'none' },
+          { categories.LAND * categories.SCOUT - categories.EXPERIMENTAL, 0, 2, 'guard', 'none' },
+    },
+}
 PlatoonTemplate {
     Name = 'RNGTECH Hero T3',
     Plan = 'TruePlatoonRNG', -- The platoon function to use.

@@ -415,22 +415,27 @@ BuilderGroup {
     Builder {
         BuilderName = 'RNG T1 Mass Adjacency Engineer',
         PlatoonTemplate = 'EngineerBuilderRNG',
-        Priority = 800,
-        DelayEqualBuildPlattons = {'MassStorage', 5},
+        Priority = 799,
+        DelayEqualBuildPlattons = {'MassStorage', 20},
         InstanceCount = 2,
         BuilderConditions = {
             { UCBC, 'CheckBuildPlatoonDelayRNG', { 'MassStorage' }},
-            { UCBC, 'HaveLessThanUnitsInCategoryBeingBuiltRNG', { 1, categories.MASSSTORAGE } },
+            { UCBC, 'HaveLessThanUnitsInCategoryBeingBuiltRNG', { 2, categories.MASSSTORAGE } },
             { UCBC, 'HaveGreaterThanUnitsWithCategory', { 2, categories.MASSEXTRACTION * (categories.TECH2 + categories.TECH3)}},
             { MABC, 'MarkerLessThanDistance',  { 'Mass', 150, -3, 0, 0}},
-            { EBC, 'GreaterThanEconEfficiencyRNG', { 1.1, 1.1 }},
+            { EBC, 'GreaterThanEconEfficiencyRNG', { 0.8, 1.1 }},
             { UCBC, 'UnitCapCheckLess', { .8 } },
-            { UCBC, 'AdjacencyCheck', { 'LocationType', categories.MASSEXTRACTION * (categories.TECH2 + categories.TECH3), 100, 'ueb1106' } },
+            { UCBC, 'AdjacencyCheck', { 'LocationType', categories.MASSEXTRACTION * (categories.TECH2), 100, 'ueb1106' } },
         },
         BuilderType = 'Any',
         BuilderData = {
             Construction = {
                 AdjacencyCategory = categories.MASSEXTRACTION * (categories.TECH2 + categories.TECH3),
+                AdjacencyPriority = {
+                    categories.STRUCTURE * categories.MASSEXTRACTION * categories.TECH3,
+                    categories.STRUCTURE * categories.MASSEXTRACTION * categories.TECH2,
+                },
+                AdjacencyBias = 'BackClose',
                 AdjacencyDistance = 100,
                 AdjRequired = true,
                 BuildClose = false,
@@ -441,6 +446,66 @@ BuilderGroup {
                     'MassStorage',
                 }
             }
+        }
+    },
+    Builder {
+        BuilderName = 'RNG T3 Mass Adjacency Engineer',
+        PlatoonTemplate = 'EngineerBuilderRNG',
+        Priority = 850,
+        --DelayEqualBuildPlattons = {'MassStorage', 20},
+        InstanceCount = 5,
+        BuilderConditions = {
+            --{ UCBC, 'CheckBuildPlatoonDelayRNG', { 'MassStorage' }},
+            --{ UCBC, 'HaveLessThanUnitsInCategoryBeingBuiltRNG', { 1, categories.MASSSTORAGE } },
+            { UCBC, 'HaveGreaterThanUnitsWithCategory', { 2, categories.MASSEXTRACTION * (categories.TECH2 + categories.TECH3)}},
+            { MABC, 'MarkerLessThanDistance',  { 'Mass', 450, -3, 0, 0}},
+            { EBC, 'GreaterThanEconEfficiencyRNG', { 0.5, 1.1 }},
+            { UCBC, 'UnitCapCheckLess', { .8 } },
+            { UCBC, 'AdjacencyCheck', { 'LocationType', categories.MASSEXTRACTION * (categories.TECH3), 100, 'ueb1106' } },
+        },
+        BuilderType = 'Any',
+        BuilderData = {
+            Construction = {
+                AdjacencyCategory = categories.MASSEXTRACTION * (categories.TECH2 + categories.TECH3),
+                AdjacencyPriority = {
+                    categories.STRUCTURE * categories.MASSEXTRACTION * categories.TECH3,
+                    --categories.STRUCTURE * categories.MASSEXTRACTION * categories.TECH2,
+                },
+                AdjacencyBias = 'BackClose',
+                AdjacencyDistance = 400,
+                AdjRequired = true,
+                BuildClose = false,
+                ThreatMin = -3,
+                ThreatMax = 0,
+                ThreatRings = 0,
+                BuildStructures = {
+                    'MassStorage',
+                }
+            }
+        }
+    },
+    Builder {
+        BuilderName = 'RNGAI Mass Storage Assist',
+        PlatoonTemplate = 'EngineerBuilderRNG',
+        Priority = 801,
+        DelayEqualBuildPlattons = {'MassStorage', 5},
+        InstanceCount = 4,
+        BuilderConditions = {
+            { UCBC, 'CheckBuildPlatoonDelayRNG', { 'MassStorage' }},
+            { EBC, 'GreaterThanEconEfficiencyRNG', { 0.75, 1.1 }},
+            { UCBC, 'HaveGreaterThanUnitsInCategoryBeingBuiltAtLocationRNG', { 'LocationType', 0, categories.STRUCTURE * (categories.MASSSTORAGE) }},
+        },
+        BuilderType = 'Any',
+        BuilderData = {
+            Assist = {
+                AssistUntilFinished = true,
+                AssistLocation = 'LocationType',
+                AssisteeType = categories.STRUCTURE,
+                AssistRange = 100,
+                AssistClosestUnit = true,
+                BeingBuiltCategories = {categories.STRUCTURE * categories.MASSSTORAGE},
+                Time = 60,
+            },
         }
     },
     Builder {
@@ -461,6 +526,11 @@ BuilderGroup {
         BuilderData = {
             Construction = {
                 AdjacencyCategory = categories.MASSEXTRACTION * (categories.TECH2 + categories.TECH3),
+                AdjacencyPriority = {
+                    categories.STRUCTURE * categories.MASSEXTRACTION * categories.TECH3,
+                    categories.STRUCTURE * categories.MASSEXTRACTION * categories.TECH2,
+                },
+                AdjacencyBias = 'BackClose',
                 AdjacencyDistance = 500,
                 AdjRequired = true,
                 BuildClose = false,

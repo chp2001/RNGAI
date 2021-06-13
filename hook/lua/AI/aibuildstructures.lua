@@ -2,6 +2,7 @@ WARN('['..string.gsub(debug.getinfo(1).source, ".*\\(.*.lua)", "%1")..', line:'.
 
 local RUtils = import('/mods/RNGAI/lua/AI/RNGUtilities.lua')
 local AIUtils = import('/lua/ai/aiutilities.lua')
+local GetNumUnitsAroundPoint = moho.aibrain_methods.GetNumUnitsAroundPoint
 
 RNGAddToBuildQueue = AddToBuildQueue
 function AddToBuildQueue(aiBrain, builder, whatToBuild, buildLocation, relative)
@@ -21,6 +22,34 @@ end
 function AIBuildBaseTemplateOrderedRNG(aiBrain, builder, buildingType , closeToBuilder, relative, buildingTemplate, baseTemplate, reference, constructionData)
     local factionIndex = aiBrain:GetFactionIndex()
     local whatToBuild = aiBrain:DecideWhatToBuild(builder, buildingType, buildingTemplate)
+    LOG('whattobuild ordered '..repr(whatToBuild))
+    LOG('basetemplate ordered '..repr(baseTemplate))
+    local canbuild=true
+    for l,bType in baseTemplate do
+        for m,bString in bType[1] do
+            LOG('bString ordered '..repr(bString))
+            if bString == buildingType then
+                for n,position in bType do
+                    if n > 1 and not aiBrain:CanBuildStructureAt(aiBrain:DecideWhatToBuild(builder, 'T1EnergyProduction', buildingTemplate), BuildToNormalLocation(position)) and canbuild then
+                         canbuild=false
+                         break
+                    end # if n > 1 and can build structure at
+                end # for loop
+                break
+            end # if bString == builderType
+        end # for loop
+    end # for loop
+    if not canbuild then
+        local relativeTo = table.copy(builder:GetPosition())
+        --LOG('relativeTo is'..repr(relativeTo))
+        local rrelative = true
+        local tmpReference = aiBrain:FindPlaceToBuild('T3EnergyProduction', 'uab1301', import('/lua/BaseTemplates.lua')['BaseTemplates'][factionIndex], rrelative, builder, nil, relativeTo[1], relativeTo[3])
+        if tmpReference then
+            reference = builder:CalculateWorldPositionFromRelative(tmpReference)
+        else
+            return
+        end
+    end
     if whatToBuild then
         if IsResource(buildingType) then
             return AIExecuteBuildStructureRNG(aiBrain, builder, buildingType , closeToBuilder, relative, buildingTemplate, baseTemplate, reference)
@@ -29,10 +58,10 @@ function AIBuildBaseTemplateOrderedRNG(aiBrain, builder, buildingType , closeToB
                 for m,bString in bType[1] do
                     if bString == buildingType then
                         for n,position in bType do
-                            if n > 1 and aiBrain:CanBuildStructureAt(whatToBuild, BuildToNormalLocation(position)) then
+                            if n > 1 and aiBrain:CanBuildStructureAt(aiBrain:DecideWhatToBuild(builder, bString, buildingTemplate), BuildToNormalLocation(position)) then
                                  AddToBuildQueue(aiBrain, builder, whatToBuild, position, false)
                                  table.remove(bType,n)
-                                 return DoHackyLogic(buildingType, builder)
+                                 --return DoHackyLogic(buildingType, builder)
                             end # if n > 1 and can build structure at
                         end # for loop
                         break
@@ -359,4 +388,193 @@ function AIBuildAdjacencyRNG(aiBrain, builder, buildingType , closeToBuilder, re
         end
     end
     return false
+end
+
+function AIBuildAdjacencyPriorityRNG(aiBrain, builder, buildingType , closeToBuilder, relative, buildingTemplate, baseTemplate, reference, cons)
+    --LOG('beginning adjacencypriority')
+    local whatToBuild = aiBrain:DecideWhatToBuild(builder, buildingType, buildingTemplate)
+    local Centered=cons.Centered
+    local AdjacencyBias=cons.AdjacencyBias
+    if AdjacencyBias then
+        if AdjacencyBias=='Forward' then
+            for _,v in reference do
+                table.sort(v,function(a,b) return VDist3Sq(a:GetPosition(),aiBrain.emanager.enemy.Position)<VDist3Sq(b:GetPosition(),aiBrain.emanager.enemy.Position) end)
+            end
+        elseif AdjacencyBias=='Back' then
+            for _,v in reference do
+                table.sort(v,function(a,b) return VDist3Sq(a:GetPosition(),aiBrain.emanager.enemy.Position)>VDist3Sq(b:GetPosition(),aiBrain.emanager.enemy.Position) end)
+            end
+        elseif AdjacencyBias=='BackClose' then
+            for _,v in reference do
+                table.sort(v,function(a,b) return VDist3Sq(a:GetPosition(),aiBrain.emanager.enemy.Position)/VDist3Sq(a:GetPosition(),builder:GetPosition())>VDist3Sq(b:GetPosition(),aiBrain.emanager.enemy.Position)/VDist3Sq(b:GetPosition(),builder:GetPosition()) end)
+            end
+        elseif AdjacencyBias=='ForwardClose' then
+            for _,v in reference do
+                table.sort(v,function(a,b) return VDist3Sq(a:GetPosition(),aiBrain.emanager.enemy.Position)*VDist3Sq(a:GetPosition(),builder:GetPosition())<VDist3Sq(b:GetPosition(),aiBrain.emanager.enemy.Position)*VDist3Sq(b:GetPosition(),builder:GetPosition()) end)
+            end
+        end
+    end
+    local function normalposition(vec)
+        return {vec[1],GetSurfaceHeight(vec[1],vec[2]),vec[2]}
+    end
+    local function heightbuildpos(vec)
+        return {vec[1],vec[2],GetSurfaceHeight(vec[1],vec[2])}
+    end
+    if whatToBuild then
+        local unitSize = aiBrain:GetUnitBlueprint(whatToBuild).Physics
+        local template = {}
+        table.insert(template, {})
+        table.insert(template[1], { buildingType })
+        --LOG('reference contains '..repr(table.getn(reference))..' items')
+        for _,x in reference do
+            for k,v in x do
+                if not Centered then
+                    if not v.Dead then
+                        local targetSize = v:GetBlueprint().Physics
+                        local targetPos = v:GetPosition()
+                        local differenceX=math.abs(targetSize.SkirtSizeX-unitSize.SkirtSizeX)
+                        local offsetX=math.floor(differenceX/2)
+                        local differenceZ=math.abs(targetSize.SkirtSizeZ-unitSize.SkirtSizeZ)
+                        local offsetZ=math.floor(differenceZ/2)
+                        local offsetfactory=0
+                        if EntityCategoryContains(categories.FACTORY, v) and (buildingType=='T1LandFactory' or buildingType=='T2SupportLandFactory' or buildingType=='T3SupportLandFactory') then
+                            offsetfactory=2
+                        end
+                        -- Top/bottom of unit
+                        for i=-offsetX,offsetX do
+                            local testPos = { targetPos[1] + (i * 1), targetPos[3]-targetSize.SkirtSizeZ/2-(unitSize.SkirtSizeZ/2)-offsetfactory, 0 }
+                            local testPos2 = { targetPos[1] + (i * 1), targetPos[3]+targetSize.SkirtSizeZ/2+(unitSize.SkirtSizeZ/2)+offsetfactory, 0 }
+                            -- check if the buildplace is to close to the border or inside buildable area
+                            if testPos[1] > 8 and testPos[1] < ScenarioInfo.size[1] - 8 and testPos[2] > 8 and testPos[2] < ScenarioInfo.size[2] - 8 then
+                                --ForkThread(RNGtemporaryrenderbuildsquare,testPos,unitSize.SkirtSizeX,unitSize.SkirtSizeZ)
+                                --table.insert(template[1], testPos)
+                                if aiBrain:CanBuildStructureAt(whatToBuild, normalposition(testPos)) then
+                                    if cons.AvoidCategory and GetNumUnitsAroundPoint(aiBrain, cons.AvoidCategory, normalposition(testPos), cons.maxRadius, 'Ally')<cons.maxUnits then
+                                        AddToBuildQueue(aiBrain, builder, whatToBuild, heightbuildpos(testPos), false)
+                                        return true
+                                    elseif not cons.AvoidCategory then
+                                        AddToBuildQueue(aiBrain, builder, whatToBuild, heightbuildpos(testPos), false)
+                                        return true
+                                    end
+                                end
+                            end
+                            if testPos2[1] > 8 and testPos2[1] < ScenarioInfo.size[1] - 8 and testPos2[2] > 8 and testPos2[2] < ScenarioInfo.size[2] - 8 then
+                                --ForkThread(RNGtemporaryrenderbuildsquare,testPos2,unitSize.SkirtSizeX,unitSize.SkirtSizeZ)
+                                --table.insert(template[1], testPos2)
+                                if aiBrain:CanBuildStructureAt(whatToBuild, normalposition(testPos2)) then
+                                    if cons.AvoidCategory and GetNumUnitsAroundPoint(aiBrain, cons.AvoidCategory, normalposition(testPos2), cons.maxRadius, 'Ally')<cons.maxUnits then
+                                        AddToBuildQueue(aiBrain, builder, whatToBuild, heightbuildpos(testPos2), false)
+                                        return true
+                                    elseif not cons.AvoidCategory then
+                                        AddToBuildQueue(aiBrain, builder, whatToBuild, heightbuildpos(testPos2), false)
+                                        return true
+                                    end
+                                end
+                            end
+                        end
+                        -- Sides of unit
+                        for i=-offsetZ,offsetZ do
+                            local testPos = { targetPos[1]-targetSize.SkirtSizeX/2-(unitSize.SkirtSizeX/2)-offsetfactory, targetPos[3] + (i * 1), 0 }
+                            local testPos2 = { targetPos[1]+targetSize.SkirtSizeX/2+(unitSize.SkirtSizeX/2)+offsetfactory, targetPos[3] + (i * 1), 0 }
+                            if testPos[1] > 8 and testPos[1] < ScenarioInfo.size[1] - 8 and testPos[2] > 8 and testPos[2] < ScenarioInfo.size[2] - 8 then
+                                --ForkThread(RNGtemporaryrenderbuildsquare,testPos,unitSize.SkirtSizeX,unitSize.SkirtSizeZ)
+                                --table.insert(template[1], testPos)
+                                if aiBrain:CanBuildStructureAt(whatToBuild, normalposition(testPos)) then
+                                    if cons.AvoidCategory and GetNumUnitsAroundPoint(aiBrain, cons.AvoidCategory, normalposition(testPos), cons.maxRadius, 'Ally')<cons.maxUnits then
+                                        AddToBuildQueue(aiBrain, builder, whatToBuild, heightbuildpos(testPos), false)
+                                        return true
+                                    elseif not cons.AvoidCategory then
+                                        AddToBuildQueue(aiBrain, builder, whatToBuild, heightbuildpos(testPos), false)
+                                        return true
+                                    end
+                                end
+                            end
+                            if testPos2[1] > 8 and testPos2[1] < ScenarioInfo.size[1] - 8 and testPos2[2] > 8 and testPos2[2] < ScenarioInfo.size[2] - 8 then
+                                --ForkThread(RNGtemporaryrenderbuildsquare,testPos2,unitSize.SkirtSizeX,unitSize.SkirtSizeZ)
+                                --table.insert(template[1], testPos2)
+                                if aiBrain:CanBuildStructureAt(whatToBuild, normalposition(testPos2)) then
+                                    if cons.AvoidCategory and GetNumUnitsAroundPoint(aiBrain, cons.AvoidCategory, normalposition(testPos2), cons.maxRadius, 'Ally')<cons.maxUnits then
+                                        AddToBuildQueue(aiBrain, builder, whatToBuild, heightbuildpos(testPos2), false)
+                                        return true
+                                    elseif not cons.AvoidCategory then
+                                        AddToBuildQueue(aiBrain, builder, whatToBuild, heightbuildpos(testPos2), false)
+                                        return true
+                                    end
+                                end
+                            end
+                        end
+                    end
+                else
+                    if not v.Dead then
+                        local targetSize = v:GetBlueprint().Physics
+                        local targetPos = v:GetPosition()
+                        targetPos[1] = targetPos[1]-- - (targetSize.SkirtSizeX/2)
+                        targetPos[3] = targetPos[3]-- - (targetSize.SkirtSizeZ/2)
+                        -- Top/bottom of unit
+                        local testPos = { targetPos[1], targetPos[3]-targetSize.SkirtSizeZ/2-(unitSize.SkirtSizeZ/2), 0 }
+                        local testPos2 = { targetPos[1], targetPos[3]+targetSize.SkirtSizeZ/2+(unitSize.SkirtSizeZ/2), 0 }
+                        -- check if the buildplace is to close to the border or inside buildable area
+                        if testPos[1] > 8 and testPos[1] < ScenarioInfo.size[1] - 8 and testPos[2] > 8 and testPos[2] < ScenarioInfo.size[2] - 8 then
+                            table.insert(template[1], testPos)
+                        end
+                        if testPos2[1] > 8 and testPos2[1] < ScenarioInfo.size[1] - 8 and testPos2[2] > 8 and testPos2[2] < ScenarioInfo.size[2] - 8 then
+                            table.insert(template[1], testPos2)
+                        end
+                        -- Sides of unit
+                        local testPos = { targetPos[1]+targetSize.SkirtSizeX/2 + (unitSize.SkirtSizeX/2), targetPos[3], 0 }
+                        local testPos2 = { targetPos[1]-targetSize.SkirtSizeX/2-(unitSize.SkirtSizeX/2), targetPos[3], 0 }
+                        if testPos[1] > 8 and testPos[1] < ScenarioInfo.size[1] - 8 and testPos[2] > 8 and testPos[2] < ScenarioInfo.size[2] - 8 then
+                            table.insert(template[1], testPos)
+                        end
+                        if testPos2[1] > 8 and testPos2[1] < ScenarioInfo.size[1] - 8 and testPos2[2] > 8 and testPos2[2] < ScenarioInfo.size[2] - 8 then
+                            table.insert(template[1], testPos2)
+                        end
+                    end
+                end
+            end
+            -- build near the base the engineer is part of, rather than the engineer location
+            local baseLocation = {nil, nil, nil}
+            if builder.BuildManagerData and builder.BuildManagerData.EngineerManager then
+                baseLocation = builder.BuildManagerdata.EngineerManager.Location
+            end
+            --ForkThread(RNGrenderReference,template[1],unitSize.SkirtSizeX,unitSize.SkirtSizeZ)
+            local location = aiBrain:FindPlaceToBuild(buildingType, whatToBuild, template, false, builder, baseLocation[1], baseLocation[3])
+            if location then
+                if location[1] > 8 and location[1] < ScenarioInfo.size[1] - 8 and location[2] > 8 and location[2] < ScenarioInfo.size[2] - 8 then
+                    --LOG('Build '..repr(buildingType)..' at adjacency: '..repr(location) )
+                    AddToBuildQueue(aiBrain, builder, whatToBuild, location, false)
+                    return true
+                end
+            end
+        end
+        -- Build in a regular spot if adjacency not found
+        if cons.AdjRequired then
+            return false
+        else
+            return AIExecuteBuildStructure(aiBrain, builder, buildingType, builder, true,  buildingTemplate, baseTemplate)
+        end
+    end
+    return false
+end
+function RNGrenderReference(reference,x,y)
+    for _,v in reference do
+        ForkThread(RNGtemporaryrenderbuildsquare,v,x,y)
+        WaitTicks(10)
+    end
+end
+function RNGtemporaryrenderbuildsquare(pos,x,y)
+    local function normalposition(vec)
+        return {vec[1],GetSurfaceHeight(vec[1],vec[2]),vec[2]}
+    end
+    local pos1={pos[1]-x/2,pos[2]-y/2}
+    local pos2={pos1[1]+x,pos1[2]}
+    local pos3={pos2[1],pos2[2]+y}
+    local pos4={pos3[1]-x,pos3[2]}
+    for _=0,20 do
+        DrawLine(normalposition(pos1),normalposition(pos2),'FF4CFF00')
+        DrawLine(normalposition(pos2),normalposition(pos3),'FF4CFF00')
+        DrawLine(normalposition(pos3),normalposition(pos4),'FF4CFF00')
+        DrawLine(normalposition(pos4),normalposition(pos1),'FF4CFF00')
+        WaitTicks(2)
+    end
 end
