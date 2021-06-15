@@ -9,7 +9,7 @@ BaseBuilderTemplate {
     BaseTemplateName = 'RNGStandardMainBaseTemplate Small Tech',
     Builders = {
         -- ACU MainBase Initial Builder --
-        'RNGAI Initial ACU Builder Small',
+        'RNG Tech Initial ACU Builder Small',
 
         -- ACU Other Builders --
         'RNG Tech ACU Build Assist',

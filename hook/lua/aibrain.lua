@@ -818,6 +818,7 @@ AIBrain = Class(RNGAIBrainClass) {
         self:ForkThread(self.EngineerAssistManagerBrainRNG)
         self:ForkThread(self.AllyEconomyHelpThread)
         self:ForkThread(self.HeavyEconomyRNG)
+        self:ForkThread(RUtils.MexUpgradeManagerRNG)
         self:CalculateMassMarkersRNG()
     end,
 
@@ -2888,7 +2889,24 @@ AIBrain = Class(RNGAIBrainClass) {
     
     EcoSelectorManagerRNG = function(self, priorityUnit, units, action, type)
         --LOG('Eco selector manager for '..priorityUnit..' is '..action..' Type is '..type)
-        
+        for _,v in units do
+            if v.UnitBeingBuilt or v.UnitBeingAssist then
+                local beingbuilt=v.UnitBeingBuilt or v.UnitBeingAssist
+                local bp=beingbuilt:GetBlueprint()
+                local massleft=(1-beingbuilt:GetFractionComplete())*bp.Economy.BuildCostMass
+                if type=='ENERGY' then
+                    massleft=(1-beingbuilt:GetFractionComplete())*bp.Economy.BuildCostEnergy
+                end
+                if beingbuilt:GetFractionComplete()<1 then
+                    v.EPriority=1/massleft
+                else
+                    v.EPriority=1
+                end
+            else
+                v.EPriority=1
+            end
+        end
+        table.sort(units,function(a,b) LOG('epriority'..repr(a.EPriority)) return a.EPriority<b.EPriority end)
         for k, v in units do
             if v.Dead then continue end
             if priorityUnit == 'ENGINEER' then

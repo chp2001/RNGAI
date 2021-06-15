@@ -11,7 +11,9 @@ local GetUnitsAroundPoint = moho.aibrain_methods.GetUnitsAroundPoint
 local CanBuildStructureAt = moho.aibrain_methods.CanBuildStructureAt
 local GiveUnitToArmy = import('/lua/ScenarioFramework.lua').GiveUnitToArmy
 local GetConsumptionPerSecondMass = moho.unit_methods.GetConsumptionPerSecondMass
-
+local GetConsumptionPerSecondEnergy = moho.unit_methods.GetConsumptionPerSecondEnergy
+local GetProductionPerSecondMass = moho.unit_methods.GetProductionPerSecondMass
+local GetProductionPerSecondEnergy = moho.unit_methods.GetProductionPerSecondEnergy
 -- TEMPORARY LOUD LOCALS
 local RNGPOW = math.pow
 local RNGSQRT = math.sqrt
@@ -701,6 +703,8 @@ function StructureUpgradeInitialize(finishedUnit, aiBrain)
     local AssignUnitsToPlatoon = moho.aibrain_methods.AssignUnitsToPlatoon
     --LOG('* AI-RNG: Structure Upgrade Initializing')
     if EntityCategoryContains(categories.MASSEXTRACTION, finishedUnit) then
+        return
+        --[[
         local extractorPlatoon = aiBrain:MakePlatoon('ExtractorPlatoon'..tostring(finishedUnit.Sync.id), 'none')
         extractorPlatoon.BuilderName = 'ExtractorPlatoon'..tostring(finishedUnit.Sync.id)
         extractorPlatoon.MovementLayer = 'Land'
@@ -714,7 +718,7 @@ function StructureUpgradeInitialize(finishedUnit, aiBrain)
             upgradeSpec = aiBrain:GetUpgradeSpec(finishedUnit)
             --LOG('* AI-RNG: UpgradeSpec'..repr(upgradeSpec))
             finishedUnit.UpgradeThread = finishedUnit:ForkThread(StructureUpgradeThread, aiBrain, upgradeSpec, false)
-        end
+        end]]
     end
     if finishedUnit.UpgradeThread then
         finishedUnit.Trash:Add(finishedUnit.UpgradeThread)
@@ -3214,5 +3218,259 @@ GetFutureMassRNG = function(aiBrain)
             end
             WaitTicks(2)
         end
+    end
+end
+function StructureUpgradeThreadRNG(unit, aiBrain, upgradeSpec, bypasseco) 
+    local unitBp = unit:GetBlueprint()
+    local upgradeID = unitBp.General.UpgradesTo or false
+    local upgradebp = false
+    local unitType, unitTech = StructureTypeCheck(aiBrain, unitBp)
+    if upgradeID then
+        upgradebp = aiBrain:GetUnitBlueprint(upgradeID) or false
+    end
+    if not (upgradeID and upgradebp) then
+        unit.UpgradeThread = nil
+        unit.UpgradesComplete = true
+        return
+    end
+    local upgradeable = true
+    local upgradeIssued = false
+    if not bypasseco then
+        bypasseco = false
+    end
+    -- Eco requirements
+    local massNeeded = upgradebp.Economy.BuildCostMass
+	local energyNeeded = upgradebp.Economy.BuildCostEnergy
+    local buildtime = upgradebp.Economy.BuildTime
+    -- build rate
+    local buildrate = unitBp.Economy.BuildRate
+    -- production while upgrading
+    local massProduction = unitBp.Economy.ProductionPerSecondMass or 0
+    local energyProduction = unitBp.Economy.ProductionPerSecondEnergy or 0
+    local massTrendNeeded = ( math.max( 0,(massNeeded / buildtime) * buildrate)) * .1
+    local energyTrendNeeded = ( math.max( 0,(energyNeeded / buildtime) * buildrate)) * .1
+    local energyMaintenance = (upgradebp.Economy.MaintenanceConsumptionPerSecondEnergy or 10) * .1
+    -- Define Economic Data
+    local eco = aiBrain.EcoData.OverTime -- mother of god I'm stupid this is another bit of Sprouto genius.
+    local massStorage
+    local energyStorage
+    local massStorageRatio
+    local energyStorageRatio
+    local massIncome
+    local massRequested
+    local energyIncome
+    local energyRequested
+    local massTrend
+    local energyTrend
+    local massEfficiency
+    local energyEfficiency
+    local ecoTimeOut
+    local upgradeNumLimit
+    local extractorUpgradeLimit = 0
+    local extractorClosest = false
+    local multiplier
+    local initial_delay = 0
+    local ecoStartTime = GetGameTimeSeconds()
+    if aiBrain.CheatEnabled then
+        multiplier = tonumber(ScenarioInfo.Options.BuildMult)
+    else
+        multiplier = 1
+    end
+    if unitTech == 'TECH1' and aiBrain.UpgradeMode == 'Aggressive' then
+        ecoTimeOut = (320 / multiplier)
+    elseif unitTech == 'TECH2' and aiBrain.UpgradeMode == 'Aggressive' then
+        ecoTimeOut = (650 / multiplier)
+    elseif unitTech == 'TECH1' and aiBrain.UpgradeMode == 'Normal' then
+        ecoTimeOut = (420 / multiplier)
+    elseif unitTech == 'TECH2' and aiBrain.UpgradeMode == 'Normal' then
+        ecoTimeOut = (880 / multiplier)
+    elseif unitTech == 'TECH1' and aiBrain.UpgradeMode == 'Caution' then
+        ecoTimeOut = (420 / multiplier)
+    elseif unitTech == 'TECH2' and aiBrain.UpgradeMode == 'Caution' then
+        ecoTimeOut = (880 / multiplier)
+    end
+    --LOG('Multiplier is '..multiplier)
+    --LOG('Initial Delay is before any multiplier is '..upgradeSpec.InitialDelay)
+    --LOG('Initial Delay is '..(upgradeSpec.InitialDelay / multiplier))
+    --LOG('Eco timeout for Tech '..unitTech..' Extractor is '..ecoTimeOut)
+    --LOG('* AI-RNG: Initial Variables set')
+    while initial_delay < (upgradeSpec.InitialDelay / multiplier) do
+		if GetEconomyStored( aiBrain, 'MASS') >= 50 and GetEconomyStored( aiBrain, 'ENERGY') >= 700 and unit:GetFractionComplete() == 1 then
+            initial_delay = initial_delay + 10
+            unit.InitialDelay = true
+            if (GetGameTimeSeconds() - ecoStartTime) > ecoTimeOut then
+                initial_delay = upgradeSpec.InitialDelay
+            end
+        end
+		WaitTicks(100)
+    end
+    unit.InitialDelay = false
+    -- Main Upgrade Loop
+    while ((not unit.Dead) or unit.Sync.id) and upgradeable and not upgradeIssued do
+        WaitTicks(upgradeSpec.UpgradeCheckWait * 10)
+        upgradeSpec = aiBrain:GetUpgradeSpec(unit)
+        if (GetGameTimeSeconds() - ecoStartTime) > ecoTimeOut then
+            bypasseco = true
+        end
+        if bypasseco and not (GetEconomyStored( aiBrain, 'MASS') > ( massNeeded * 1.8 ) and GetEconomyStored( aiBrain, 'ENERGY') > energyNeeded ) then
+            upgradeNumLimit = StructureUpgradeNumDelay(aiBrain, unitType, unitTech)
+            if unitTech == 'TECH1' then
+                extractorUpgradeLimit = aiBrain.EcoManager.ExtractorUpgradeLimit.TECH1
+            elseif unitTech == 'TECH2' then
+                extractorUpgradeLimit = aiBrain.EcoManager.ExtractorUpgradeLimit.TECH2
+            end
+            if upgradeNumLimit >= extractorUpgradeLimit then
+                WaitTicks(10)
+                continue
+            end
+        end
+        extractorClosest = ExtractorClosest(aiBrain, unit, unitBp)
+        if not extractorClosest then
+            WaitTicks(10)
+            continue
+        end
+        if (not unit.MAINBASE) or (unit.MAINBASE and not bypasseco) then
+            if UnitRatioCheckRNG( aiBrain, 1.7, categories.MASSEXTRACTION * categories.TECH1, '>=', categories.MASSEXTRACTION * categories.TECH2 ) and unitTech == 'TECH2' then
+                --LOG('Too few tech2 extractors to go tech3')
+                ecoStartTime = ecoStartTime + upgradeSpec.UpgradeCheckWait
+                WaitTicks(10)
+                continue
+            end
+        end
+        if aiBrain.UpgradeIssued < aiBrain.UpgradeIssuedLimit then
+            massStorage = GetEconomyStored( aiBrain, 'MASS')
+            energyStorage = GetEconomyStored( aiBrain, 'ENERGY')
+            massStorageRatio = GetEconomyStoredRatio(aiBrain, 'MASS')
+            energyStorageRatio = GetEconomyStoredRatio(aiBrain, 'ENERGY')
+            massIncome = GetEconomyIncome(aiBrain, 'MASS')
+            massRequested = GetEconomyRequested(aiBrain, 'MASS')
+            energyIncome = GetEconomyIncome(aiBrain, 'ENERGY')
+            energyRequested = GetEconomyRequested(aiBrain, 'ENERGY')
+            massTrend = aiBrain.EconomyOverTimeCurrent.MassTrendOverTime
+            energyTrend = aiBrain.EconomyOverTimeCurrent.EnergyTrendOverTime
+            if (aiBrain.EconomyOverTimeCurrent.MassEfficiencyOverTime >= upgradeSpec.MassLowTrigger and aiBrain.EconomyOverTimeCurrent.EnergyEfficiencyOverTime >= upgradeSpec.EnergyLowTrigger)
+                or ((massStorageRatio > .60 and energyStorageRatio > .40))
+                or (massStorage > (massNeeded * .7) and energyStorage > (energyNeeded * .7 ) ) or bypasseco then
+            else
+                WaitTicks(10)
+                continue
+            end
+            if ( massTrend >= massTrendNeeded and energyTrend >= energyTrendNeeded and energyTrend >= energyMaintenance )
+				or ( massStorage >= (massNeeded * .7) and energyStorage > (energyNeeded * .7) ) or bypasseco then
+				-- we need to have 15% of the resources stored -- some things like MEX can bypass this last check
+				if (massStorage > ( massNeeded * .15 * upgradeSpec.MassLowTrigger) and energyStorage > ( energyNeeded * .15 * upgradeSpec.EnergyLowTrigger)) or bypasseco then
+                    if aiBrain.UpgradeIssued < aiBrain.UpgradeIssuedLimit then
+						if not unit.Dead then
+                            upgradeIssued = true
+                            IssueUpgrade({unit}, upgradeID)
+                            -- if upgrade issued and not completely full --
+                            if massStorageRatio < 1 or energyStorageRatio < 1 then
+                                ForkThread(StructureUpgradeDelay, aiBrain, aiBrain.UpgradeIssuedPeriod)  -- delay the next upgrade by the full amount
+                            else
+                                ForkThread(StructureUpgradeDelay, aiBrain, aiBrain.UpgradeIssuedPeriod * .5)     -- otherwise halve the delay period
+                            end
+                            repeat
+                               WaitTicks(50)
+                            until unit.Dead or (unit.UnitBeingBuilt:GetBlueprint().BlueprintId == upgradeID) -- Fix this!
+                        end
+                        if unit.Dead then
+                            upgradeIssued = false
+                        end
+                        if upgradeIssued then
+                            WaitTicks(10)
+                            continue
+                        end
+                    end
+                end
+            end
+        end
+    end
+    if upgradeIssued then
+		--LOG('* AI-RNG: upgradeIssued is true')
+		unit.Upgrading = true
+        unit.DesiresAssist = true
+        local unitbeingbuiltbp = false
+		local unitbeingbuilt = unit.UnitBeingBuilt
+        unitbeingbuiltbp = unitbeingbuilt:GetBlueprint()
+        upgradeID = unitbeingbuiltbp.General.UpgradesTo or false
+		-- if the upgrade has a follow on upgrade - start an upgrade thread for it --
+        if upgradeID and not unitbeingbuilt.Dead then
+			upgradeSpec.InitialDelay = upgradeSpec.InitialDelay + 60			-- increase delay before first check for next upgrade
+            unitbeingbuilt.DesiresAssist = true			-- let engineers know they can assist this upgrade
+			unitbeingbuilt.UpgradeThread = unitbeingbuilt:ForkThread( StructureUpgradeThread, aiBrain, upgradeSpec, bypasseco )
+        end
+		-- assign mass extractors to their own platoon 
+		if (not unitbeingbuilt.Dead) and EntityCategoryContains( categories.MASSEXTRACTION, unitbeingbuilt) then
+			local extractorPlatoon = MakePlatoon( aiBrain,'ExtractorPlatoon'..tostring(unitbeingbuilt.Sync.id), 'none')
+			extractorPlatoon.BuilderName = 'ExtractorPlatoon'..tostring(unitbeingbuilt.Sync.id)
+            extractorPlatoon.MovementLayer = 'Land'
+            --LOG('* AI-RNG: Extractor Platoon name is '..extractorPlatoon.BuilderName)
+			AssignUnitsToPlatoon( aiBrain, extractorPlatoon, {unitbeingbuilt}, 'Support', 'none' )
+			extractorPlatoon:ForkThread( extractorPlatoon.ExtractorCallForHelpAIRNG, aiBrain )
+		elseif (not unitbeingbuilt.Dead) then
+            AssignUnitsToPlatoon( aiBrain, aiBrain.StructurePool, {unitbeingbuilt}, 'Support', 'none' )
+		end
+        unit.UpgradeThread = nil
+	end
+end
+function MexUpgradeManagerRNG(aiBrain)
+    local homebasex,homebasey = aiBrain:GetArmyStartPos()
+    local homepos = {homebasex,GetTerrainHeight(homebasex,homebasey),homebasey}
+    local ratio=0.35
+    while not aiBrain.cmanager.categoryspend or GetGameTimeSeconds()<250 do
+        WaitSeconds(10)
+    end
+    while not aiBrain.defeat do
+        local mexes = aiBrain:GetListOfUnits(categories.MASSEXTRACTION - categories.TECH3, true, false)
+        local time=GetGameTimeSeconds()
+        --[[if aiBrain.EcoManagerPowerStateCheck(aiBrain) then
+            WaitSeconds(4)
+            continue
+        end]]
+        for _,v in mexes do
+            --if not v.UCost then
+                local spende=GetConsumptionPerSecondEnergy(v)
+                local producem=GetProductionPerSecondMass(v)
+                local unit=v:GetBlueprint()
+                if spende<unit.Economy.MaintenanceConsumptionPerSecondEnergy and spende>0 then
+                    v.UEmult=spende/unit.Economy.MaintenanceConsumptionPerSecondEnergy
+                else
+                    v.UEmult=1
+                end
+                if producem>unit.Economy.ProductionPerSecondMass then
+                    v.UMmult=producem/unit.Economy.ProductionPerSecondMass
+                else
+                    v.UMmult=1
+                end
+                local uunit=aiBrain:GetUnitBlueprint(unit.General.UpgradesTo)
+                local mcost=uunit.Economy.BuildCostMass/uunit.Economy.BuildTime*unit.Economy.BuildRate
+                local ecost=uunit.Economy.BuildCostEnergy/uunit.Economy.BuildTime*unit.Economy.BuildRate
+                v.UCost=mcost
+                v.UECost=ecost
+                v.TMCost=uunit.Economy.BuildCostMass
+                v.Uupgrade=unit.General.UpgradesTo
+           --end
+            if not v.UAge then
+                v.UAge=time
+            end
+        end
+        --[[if 10>aiBrain.cmanager.income.r.m*ratio then
+            WaitSeconds(3)
+            continue
+        end]]
+        if aiBrain.cmanager.categoryspend.mex.T1+aiBrain.cmanager.categoryspend.mex.T2<aiBrain.cmanager.income.r.m*ratio then
+            table.sort(mexes,function(a,b) return VDist3Sq(a:GetPosition(),homepos)/VDist3Sq(aiBrain.emanager.enemy.Position,a:GetPosition())/VDist3Sq(aiBrain.emanager.enemy.Position,a:GetPosition())*a.UCost*a.UCost*a.TMCost*a.UECost*a.UEmult*a.UEmult*a.UAge/a.UMmult/a.UMmult<VDist3Sq(b:GetPosition(),homepos)/VDist3Sq(aiBrain.emanager.enemy.Position,b:GetPosition())/VDist3Sq(aiBrain.emanager.enemy.Position,b:GetPosition())*b.UCost*b.UCost*b.TMCost*b.UECost*b.UEmult*b.UEmult*b.UAge/b.UMmult/b.UMmult end)
+            local startval=aiBrain.cmanager.income.r.m*ratio-(aiBrain.cmanager.categoryspend.mex.T1+aiBrain.cmanager.categoryspend.mex.T2)
+            --local starte=aiBrain.cmanager.income.r.e*1.3-aiBrain.cmanager.spend.e
+            for _,v in mexes do
+                if startval>0 then
+                    IssueUpgrade({v}, v.Uupgrade)
+                    startval=startval-v.UCost
+                else
+                    break
+                end
+            end
+        end
+        WaitSeconds(4)
     end
 end

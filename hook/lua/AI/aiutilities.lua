@@ -707,8 +707,9 @@ function EngineerMoveWithSafePathCHP(aiBrain, eng, destination, whatToBuildM)
             local pathSize = table.getn(path)
             -- Move to way points (but not to destination... leave that for the final command)
             local k=1
+            if not eng.mexesqueued then eng.mexesqueued=0 end
             for widx, waypointPath in path do
-                if whatToBuildM and widx>=3 then
+                if whatToBuildM and widx>=3 and eng.mexesqueued<5 then
                     local bool,markers=MABC.CanBuildOnMassEng2(aiBrain, waypointPath, 30)
                     if bool then
                         --LOG('We can build on a mass marker within 30')

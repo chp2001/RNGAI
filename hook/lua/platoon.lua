@@ -6236,7 +6236,7 @@ Platoon = Class(RNGAIPlatoon) {
                     end
                 end
                 if spread>4 then
-                    WaitTicks(math.ceil(math.sqrt(spread+10)*5))
+                    WaitTicks(math.ceil(math.sqrt(spread+10)))
                 end
             end
             platoon.health=0
@@ -6351,7 +6351,7 @@ Platoon = Class(RNGAIPlatoon) {
                 if platoon.path and VDist3Sq(platoon.path[table.getn(platoon.path)],platoon.Pos)<platoon.MaxWeaponRange then
                     platoon.path=nil
                 end
-                if platoon.navigating then while platoon.navitating do WaitTicks(10) end end
+                if platoon.navigating then while platoon.navigating do WaitTicks(10) end end
                 if target then
                     platoon.path=AIAttackUtils.PlatoonGenerateSafePathTo(aiBrain, self.MovementLayer, platoon.Pos, targetPosition, 0, 150,ScenarioInfo.size[1]*ScenarioInfo.size[2])
                     if not platoon.path then 
@@ -6398,34 +6398,18 @@ Platoon = Class(RNGAIPlatoon) {
                         end
                         platoon.path=AIAttackUtils.PlatoonGenerateSafePathTo(aiBrain, self.MovementLayer, platoon.Pos, platoon.dest, 0, 150,ScenarioInfo.size[1]*ScenarioInfo.size[2])
                         platoon.navigating=true
-                        WaitTicks(40)
+                        WaitTicks(20)
                         continue
                     end
-                    self:Stop()
-                    if platoon.path[2] then
-                        self:AggressiveMoveToLocation(platoon.path[2])
-                    else
-                        self:AggressiveMoveToLocation(platoon.path[1])
-                    end
                     platoon.navigating=true
-                    WaitTicks(40)
+                    WaitTicks(20)
                     continue
                 elseif platoon.path then
                     local path=table.copy(platoon.path)
                     LOG('path '..repr(path))
                     table.sort(path,function(a,b) return VDist2Sq(a[1],a[3],platoon.path[table.getn(platoon.path)][1],platoon.path[table.getn(platoon.path)][3])*math.pow(VDist2Sq(a[1],a[3],platoon.Pos[1],platoon.Pos[3]),1.5)<VDist2Sq(b[1],b[3],platoon.path[table.getn(platoon.path)][1],platoon.path[table.getn(platoon.path)][3])*math.pow(VDist2Sq(b[1],b[3],platoon.Pos[1],platoon.Pos[3]),1.5) end)
-                    self:Stop()
-                    if VDist3Sq(path[1],platoon.Pos)<platoon.MaxWeaponRange*platoon.MaxWeaponRange*2 then
-                        if path[2] then
-                            self:AggressiveMoveToLocation(path[2])
-                        else
-                            self:AggressiveMoveToLocation(path[1])
-                        end  
-                    else
-                        self:AggressiveMoveToLocation(path[1])
-                    end
                     platoon.navigating=true
-                    WaitTicks(40)
+                    WaitTicks(20)
                     continue
                 else
                     platoon.target=nil
@@ -6730,7 +6714,7 @@ Platoon = Class(RNGAIPlatoon) {
                             if not v or v.Dead then continue end
                             if v.Support and VDist3Sq(v:GetPosition(),platoon.Pos)>8*8 then
                                 IssueClearCommands({v})
-                                IssueMove({v},RUtils.lerpy(platoon.Pos,platoon.home,{VDist3(v:GetPosition(),platoon.Pos),3}))
+                                IssueMove({v},RUtils.lerpy(platoon.dest,platoon.home,{VDist3(v:GetPosition(),platoon.dest),30}))
                                 WaitTicks(1)
                                 continue
                             end
@@ -6779,7 +6763,7 @@ Platoon = Class(RNGAIPlatoon) {
                             if not v or v.Dead then continue end
                             if v.Support and VDist3Sq(v:GetPosition(),platoon.Pos)>8*8 then
                                 IssueClearCommands({v})
-                                IssueMove({v},RUtils.lerpy(platoon.Pos,platoon.home,{VDist3(v:GetPosition(),platoon.Pos),3}))
+                                IssueMove({v},RUtils.lerpy(platoon.dest,platoon.home,{VDist3(v:GetPosition(),platoon.dest),30}))
                                 WaitTicks(1)
                                 continue
                             end
@@ -6792,7 +6776,7 @@ Platoon = Class(RNGAIPlatoon) {
                             IssueMove({v},smartPos)
                             WaitTicks(1)
                         end
-                        WaitTicks(25)
+                        WaitTicks(15)
                     elseif targetDist<platoon.MaxWeaponRange*5 then
                         platoon.dest={targetPosition[1]+math.random(-4,4),targetPosition[2],targetPosition[3]+math.random(-4,4)}
                         self:Stop()
@@ -6813,7 +6797,7 @@ Platoon = Class(RNGAIPlatoon) {
             if not PlatoonExists(aiBrain, self) then
                 return
             end
-            WaitTicks(10)
+            WaitTicks(5)
         end
     end,
     HighlightTruePlatoon = function(self)
@@ -7086,7 +7070,7 @@ Platoon = Class(RNGAIPlatoon) {
             if not PlatoonExists(aiBrain, self) then
                 return
             end
-            WaitTicks(35)
+            WaitTicks(25)
             continue
         end
     end,
@@ -7253,15 +7237,17 @@ Platoon = Class(RNGAIPlatoon) {
             if not AIUtils.EngineerMoveWithSafePathCHP(aiBrain, eng, currentmexpos, whatToBuild) then table.remove(markerTable,curindex) continue end
             local firstmex=currentmexpos
             local initialized=nil
+            local finalqueued=0
             for _=0,3,1 do
                 if not currentmexpos then break end
                 local bool,markers=MABC.CanBuildOnMassEng2(aiBrain, currentmexpos, 30)
-                if bool then
+                if bool and finalqueued<2 or bool and eng.mexesqueued<2 then
                     for _,massMarker in markers do
                         RUtils.EngineerTryReclaimCaptureArea(aiBrain, eng, massMarker.Position)
                         AIUtils.EngineerTryRepair(aiBrain, eng, whatToBuild, massMarker.Position)
                         aiBrain:BuildStructure(eng, whatToBuild, {massMarker.Position[1], massMarker.Position[3], 0}, false)
                         eng.mexesqueued=eng.mexesqueued+1
+                        finalqueued=finalqueued+1
                         local newEntry = {whatToBuild, {massMarker.Position[1], massMarker.Position[3], 0}, false,Position=massMarker.Position}
                         table.insert(eng.EngineerBuildQueue, newEntry)
                         currentmexpos=massMarker.Position

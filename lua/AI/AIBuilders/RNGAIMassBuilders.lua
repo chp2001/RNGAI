@@ -461,7 +461,7 @@ BuilderGroup {
             { MABC, 'MarkerLessThanDistance',  { 'Mass', 450, -3, 0, 0}},
             { EBC, 'GreaterThanEconEfficiencyRNG', { 0.5, 1.1 }},
             { UCBC, 'UnitCapCheckLess', { .8 } },
-            { UCBC, 'AdjacencyCheck', { 'LocationType', categories.MASSEXTRACTION * (categories.TECH3), 100, 'ueb1106' } },
+            { UCBC, 'AdjacencyCheck', { 'LocationType', categories.MASSEXTRACTION * (categories.TECH3), 450, 'ueb1106' } },
         },
         BuilderType = 'Any',
         BuilderData = {

@@ -856,12 +856,12 @@ BuilderGroup {
         PlatoonTemplate = 'EngineerBuilderRNG',
         Priority = 994,
         InstanceCount = 5,
-        DelayEqualBuildPlattons = {'EnergyP', 20},
+        DelayEqualBuildPlattons = {'EnergyP', 10},
         BuilderConditions = {
             { MIBC, 'GreaterThanGameTimeRNG', { 110 } },
-            { EBC, 'FutureProofEspendRNG', { 0.7 }},
+            { EBC, 'FutureProofEspendRNG', { 0.9 }},
             { UCBC, 'CheckBuildPlatoonDelayRNG', { 'EnergyP' }},
-            { UCBC, 'HaveLessThanUnitsInCategoryBeingBuiltRNG', { 1, categories.ENERGYPRODUCTION * (categories.TECH2 + categories.TECH3) }},
+            --{ UCBC, 'HaveLessThanUnitsInCategoryBeingBuiltRNG', { 1, categories.ENERGYPRODUCTION * (categories.TECH2 + categories.TECH3) }},
             { UCBC, 'HaveLessThanUnitsWithCategory', { 1, categories.ENERGYPRODUCTION * (categories.TECH2 + categories.TECH3) }}, -- Don't build after 1 T2 Pgens Exist
             { UCBC, 'HaveGreaterThanUnitsInCategoryBeingBuiltAtLocationRNG', { 'LocationType', 0, categories.ENERGYPRODUCTION}},
             { UCBC, 'HaveLessThanUnitsInCategoryBeingBuiltRNG', { 4, categories.ENERGYPRODUCTION - categories.HYDROCARBON } },
@@ -912,13 +912,16 @@ BuilderGroup {
             Construction = {
                 AdjacencyCategory = (categories.STRUCTURE * categories.SHIELD) + (categories.FACTORY * (categories.TECH3 + categories.TECH2 + categories.TECH1)),
                 AdjacencyPriority = {
+                    categories.EXPERIMENTAL * categories.STRUCTURE * categories.INDIRECTFIRE,
+                    categories.STRATEGIC * categories.STRUCTURE - categories.AIRSTAGINGPLATFORM,
                     categories.FACTORY * categories.AIR,
-                    categories.RADAR * categories.STRUCTURE,
-                    categories.MASSEXTRACTION * categories.TECH1,
+                    categories.SHIELD * categories.STRUCTURE * categories.TECH3,
+                    categories.MASSFABRICATION * categories.TECH3,
+                    categories.GATE * categories.STRUCTURE,
                     categories.FACTORY * categories.LAND,
-                    categories.ENERGYSTORAGE,   
+                    categories.SHIELD * categories.STRUCTURE * categories.TECH2,
                     categories.INDIRECTFIRE * categories.DEFENSE,
-                    categories.SHIELD * categories.STRUCTURE,
+                    categories.RADAR * categories.STRUCTURE,
                     categories.ENERGYPRODUCTION * categories.STRUCTURE,
                 },
                 AdjacencyDistance = 80,
@@ -975,6 +978,30 @@ BuilderGroup {
 BuilderGroup {
     BuilderGroupName = 'RNG Tech Energy Assist',
     BuildersType = 'EngineerBuilder',
+    Builder {
+        BuilderName = 'RNG Tech T1 Engineer Hydro Assist',
+        PlatoonTemplate = 'T1EngineerAssistRNG',
+        Priority = 1050,
+        DelayEqualBuildPlattons = {'EngineerAssistPgen1', 4},
+        InstanceCount = 5,
+        BuilderConditions = {
+            { UCBC, 'CheckBuildPlatoonDelayRNG', { 'EngineerAssistPgen1' }},
+            { UCBC, 'HaveLessThanUnitsInCategoryBeingBuiltRNG', { 1, categories.ENERGYPRODUCTION * (categories.TECH2 + categories.TECH3) }},
+            { UCBC, 'HaveGreaterThanUnitsInCategoryBeingBuiltAtLocationRNG', { 'LocationType', 0, categories.STRUCTURE * categories.HYDROCARBON }},
+            { UCBC, 'HaveLessThanUnitsWithCategory', { 4, categories.ENERGYPRODUCTION * categories.STRUCTURE }},
+            },
+        BuilderData = {
+            Assist = {
+                AssistUntilFinished = true,
+                AssistLocation = 'LocationType',
+                AssisteeType = categories.STRUCTURE,
+                AssistRange = 100,
+                BeingBuiltCategories = {categories.STRUCTURE * categories.HYDROCARBON},
+                AssistClosestUnit = true,
+            },
+        },
+        BuilderType = 'Any',
+    },
     Builder {
         BuilderName = 'RNG Tech T1 Engineer PGEN Assist',
         PlatoonTemplate = 'T1EngineerAssistRNG',

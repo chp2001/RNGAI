@@ -191,6 +191,36 @@ BuilderGroup {
         }
     },
     Builder {
+        BuilderName = 'RNG Tech CDR Initial Hydro Rush',
+        PlatoonAddBehaviors = {'CommanderBehaviorRNG', 'ACUDetection'},
+        PlatoonTemplate = 'CommanderBuilderRNG',
+        Priority = 1001,
+        PriorityFunction = function(self, aiBrain)
+			return 0, false
+		end,
+        BuilderConditions = {
+            { IBC, 'NotPreBuilt', {}},
+            { UCBC, 'CanBuildOnHydroLessThanDistanceRNG', { 'LocationType', 65, -1000, 100, 1, 'AntiSurface', 1 }},
+        },
+        InstantCheck = true,
+        BuilderType = 'Any',
+        BuilderData = {
+            ScanWait = 40,
+            Construction = {
+                BaseTemplateFile = '/mods/rngai/lua/AI/AIBuilders/ACUBaseTemplate.lua',
+                BaseTemplate = 'ACUBaseTemplate',
+                MaxDistance = 30,
+                BuildStructures = {
+                    'T1LandFactory',
+                    'T1Resource',
+                    'T1Resource',
+                    'T1Resource',
+                    'T1Resource',
+                },
+            }
+        }
+    },
+    Builder {
         BuilderName = 'RNG Tech CDR Initial Land Standard Small Close 5+M',
         PlatoonAddBehaviors = {'CommanderBehaviorRNG', 'ACUDetection'},
         PlatoonTemplate = 'CommanderBuilderRNG',
@@ -273,6 +303,7 @@ BuilderGroup {
                     categories.ENERGYPRODUCTION * categories.STRUCTURE * categories.TECH1 - categories.HYDROCARBON,
                     categories.FACTORY * categories.LAND,
                 },
+                AdjacencyBias = 'Close',
                 BuildStructures = {
                     'T1LandFactory',
                 },
@@ -302,6 +333,7 @@ BuilderGroup {
                     categories.ENERGYPRODUCTION * categories.STRUCTURE * categories.TECH1 - categories.HYDROCARBON,
                     categories.FACTORY * categories.LAND,
                 },
+                AdjacencyBias = 'Close',
                 BuildStructures = {
                     'T1LandFactory',
                 },
@@ -333,6 +365,7 @@ BuilderGroup {
                     categories.ENERGYPRODUCTION * categories.STRUCTURE * categories.TECH1,
                     categories.FACTORY * categories.AIR,
                 },
+                AdjacencyBias = 'Close',
                 BuildStructures = {
                     'T1AirFactory',
                 },
@@ -366,6 +399,7 @@ BuilderGroup {
                     categories.ENERGYPRODUCTION * categories.STRUCTURE * categories.TECH1,
                     categories.FACTORY * categories.AIR,
                 },
+                AdjacencyBias = 'Close',
                 BuildStructures = {
                     'T1AirFactory',
                 },
@@ -418,6 +452,7 @@ BuilderGroup {
                     categories.SHIELD * categories.STRUCTURE,
                     categories.ENERGYPRODUCTION * categories.STRUCTURE,
                 },
+                AdjacencyBias = 'Close',
                 BuildStructures = {
                     'T1EnergyProduction',
                 },
@@ -459,6 +494,7 @@ BuilderGroup {
                     categories.SHIELD * categories.STRUCTURE,
                     categories.ENERGYPRODUCTION * categories.STRUCTURE,
                 },
+                AdjacencyBias = 'Close',
                 maxUnits = 1,
                 maxRadius = 3,
                 BuildStructures = {

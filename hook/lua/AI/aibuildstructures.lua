@@ -412,6 +412,10 @@ function AIBuildAdjacencyPriorityRNG(aiBrain, builder, buildingType , closeToBui
             for _,v in reference do
                 table.sort(v,function(a,b) return VDist3Sq(a:GetPosition(),aiBrain.emanager.enemy.Position)*VDist3Sq(a:GetPosition(),builder:GetPosition())<VDist3Sq(b:GetPosition(),aiBrain.emanager.enemy.Position)*VDist3Sq(b:GetPosition(),builder:GetPosition()) end)
             end
+        elseif AdjacencyBias=='Close' then
+            for _,v in reference do
+                table.sort(v,function(a,b) return VDist3Sq(a:GetPosition(),builder:GetPosition())<VDist3Sq(b:GetPosition(),builder:GetPosition()) end)
+            end
         end
     end
     local function normalposition(vec)
