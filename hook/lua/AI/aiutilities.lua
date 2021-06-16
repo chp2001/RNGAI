@@ -666,7 +666,7 @@ function EngineerMoveWithSafePathCHP(aiBrain, eng, destination, whatToBuildM)
     and eng.PlatoonHandle and not EntityCategoryContains(categories.COMMAND, eng) and aiBrain:GetCurrentUnits(categories.TRANSPORTATION * categories.AIR)>=1 then
         -- If we can't path to our destination, we need, rather than want, transports
         local needTransports = not result and reason ~= 'PathOK'
-        if VDist2Sq(pos[1], pos[3], destination[1], destination[3]) > 200 * 200 then
+        if VDist2Sq(pos[1], pos[3], destination[1], destination[3]) > 512 * 512 then
             needTransports = true
         end
 

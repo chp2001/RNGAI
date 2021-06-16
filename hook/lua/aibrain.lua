@@ -2906,7 +2906,7 @@ AIBrain = Class(RNGAIBrainClass) {
                 v.EPriority=1
             end
         end
-        table.sort(units,function(a,b) LOG('epriority'..repr(a.EPriority)) return a.EPriority<b.EPriority end)
+        table.sort(units,function(a,b) return a.EPriority<b.EPriority end)
         for k, v in units do
             if v.Dead then continue end
             if priorityUnit == 'ENGINEER' then

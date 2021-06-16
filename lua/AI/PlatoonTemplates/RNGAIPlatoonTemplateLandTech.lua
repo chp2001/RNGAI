@@ -4,7 +4,13 @@
     Summary :
         Responsible for defining a mapping from AIBuilders keys -> Plans (Plans === platoon.lua functions)
 ]]
-
+PlatoonTemplate {
+    Name = 'T1EngineerFinishRNGTech',
+    Plan = 'FinishStructurePriorityAIRNG',
+    GlobalSquads = {
+        { categories.ENGINEER * categories.TECH1, 1, 1, 'support', 'None' }
+    },
+}
 PlatoonTemplate {
     Name = 'RNGTECH LandAttack Spam Intelli',
     Plan = 'TruePlatoonRNG', -- The platoon function to use.

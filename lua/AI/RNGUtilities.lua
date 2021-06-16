@@ -3414,6 +3414,7 @@ function StructureUpgradeThreadRNG(unit, aiBrain, upgradeSpec, bypasseco)
 	end
 end
 function MexUpgradeManagerRNG(aiBrain)
+    aiBrain:ForkThread(DisplayMarkerAdjacency)
     local homebasex,homebasey = aiBrain:GetArmyStartPos()
     local homepos = {homebasex,GetTerrainHeight(homebasex,homebasey),homebasey}
     local ratio=0.35
@@ -3453,13 +3454,14 @@ function MexUpgradeManagerRNG(aiBrain)
             if not v.UAge then
                 v.UAge=time
             end
+            v.TAge=1/(1+math.min(120,time-v.UAge)/120)
         end
         --[[if 10>aiBrain.cmanager.income.r.m*ratio then
             WaitSeconds(3)
             continue
         end]]
         if aiBrain.cmanager.categoryspend.mex.T1+aiBrain.cmanager.categoryspend.mex.T2<aiBrain.cmanager.income.r.m*ratio then
-            table.sort(mexes,function(a,b) return VDist3Sq(a:GetPosition(),homepos)/VDist3Sq(aiBrain.emanager.enemy.Position,a:GetPosition())/VDist3Sq(aiBrain.emanager.enemy.Position,a:GetPosition())*a.UCost*a.UCost*a.TMCost*a.UECost*a.UEmult*a.UEmult*a.UAge/a.UMmult/a.UMmult<VDist3Sq(b:GetPosition(),homepos)/VDist3Sq(aiBrain.emanager.enemy.Position,b:GetPosition())/VDist3Sq(aiBrain.emanager.enemy.Position,b:GetPosition())*b.UCost*b.UCost*b.TMCost*b.UECost*b.UEmult*b.UEmult*b.UAge/b.UMmult/b.UMmult end)
+            table.sort(mexes,function(a,b) return VDist3Sq(a:GetPosition(),homepos)/VDist3Sq(aiBrain.emanager.enemy.Position,a:GetPosition())/VDist3Sq(aiBrain.emanager.enemy.Position,a:GetPosition())*a.UCost*a.UCost*a.TMCost*a.UECost*a.UEmult*a.UEmult*a.TAge/a.UMmult/a.UMmult<VDist3Sq(b:GetPosition(),homepos)/VDist3Sq(aiBrain.emanager.enemy.Position,b:GetPosition())/VDist3Sq(aiBrain.emanager.enemy.Position,b:GetPosition())*b.UCost*b.UCost*b.TMCost*b.UECost*b.UEmult*b.UEmult*b.TAge/b.UMmult/b.UMmult end)
             local startval=aiBrain.cmanager.income.r.m*ratio-(aiBrain.cmanager.categoryspend.mex.T1+aiBrain.cmanager.categoryspend.mex.T2)
             --local starte=aiBrain.cmanager.income.r.e*1.3-aiBrain.cmanager.spend.e
             for _,v in mexes do
@@ -3472,5 +3474,47 @@ function MexUpgradeManagerRNG(aiBrain)
             end
         end
         WaitSeconds(4)
+    end
+end
+function DisplayMarkerAdjacency(aiBrain)
+    local expansionMarkers = Scenario.MasterChain._MASTERCHAIN_.Markers
+    aiBrain.RNGAreas={}
+    aiBrain.renderlines={}
+    for k,marker in expansionMarkers do
+        local node=false
+        for i, v in STR_GetTokens(marker.type,' ') do
+            if v=='Node' then
+                node=true
+                break
+            end
+        end
+        if node and not marker.RNGArea then
+            aiBrain.RNGAreas[k]={}
+            InfectMarkersRNG(aiBrain,marker,k)
+        end
+    end
+    LOG('RNGAreas:')
+    for k,v in aiBrain.RNGAreas do
+        LOG(repr(k)..' has '..repr(table.getn(v))..' nodes')
+    end
+    --[[while not aiBrain.defeat do
+        for _,v in aiBrain.renderlines do
+            if v[3]=='Land Path Node' then
+                DrawLine(v[1],v[2],'FFBF9C1E')
+            elseif v[3]=='Water Path Node' then
+                DrawLine(v[1],v[2],'FF7100FF')
+            end
+        end
+        WaitTicks(2)
+    end]]
+end
+function InfectMarkersRNG(aiBrain,marker,graphname)
+    marker.RNGArea=graphname
+    table.insert(aiBrain.RNGAreas[graphname],marker)
+    for i, node in STR_GetTokens(marker.adjacentTo or '', ' ') do
+        table.insert(aiBrain.renderlines,{marker.position,Scenario.MasterChain._MASTERCHAIN_.Markers[node].position,marker.type})
+        if not Scenario.MasterChain._MASTERCHAIN_.Markers[node].RNGArea then
+            InfectMarkersRNG(aiBrain,Scenario.MasterChain._MASTERCHAIN_.Markers[node],graphname)
+        end
     end
 end

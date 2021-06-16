@@ -7135,10 +7135,9 @@ Platoon = Class(RNGAIPlatoon) {
                 reclaimables = aiBrain:GetListOfUnits(reclaimcat, false, true)
                 table.sort(reclaimables,function(a,b) return VDist3Sq(unitPos,a:GetPosition())<VDist3Sq(unitPos,b:GetPosition()) end)
                 for k,v in reclaimables do
-                    if not v.Dead and (not reclaimunit or VDist3(unitPos, v:GetPosition()) < distance) and unitPos and not v:IsUnitState('Upgrading') and v:GetFractionComplete() == 1 then
-                        if v:IsUnitState('Upgrading') then table.remove(reclaimables,k) end
+                    if not v.Dead and (not reclaimunit or VDist3(unitPos, v:GetPosition()) < radius) and unitPos and not v:IsUnitState('Upgrading') and v:GetFractionComplete() == 1 then
                         reclaimunit = v
-                        distance = VDist3(unitPos, v:GetPosition())
+                        break
                     end
                 end
                 if reclaimunit then break end
@@ -7269,6 +7268,57 @@ Platoon = Class(RNGAIPlatoon) {
         end
         eng.platoonactive=false
     end,
+    FinishStructurePriorityAIRNG = function(self)
+        local aiBrain = self:GetBrain()
+        if not self.PlatoonData or not self.PlatoonData.Assist then
+            WARN('* AI-RNG: FinishStructurePriorityAIRNG missing data' )
+            self:PlatoonDisband()
+            return
+        end
+        local assistData = self.PlatoonData.Assist
+        local eng = self:GetPlatoonUnits()[1]
+        local engineerManager = aiBrain.BuilderManagers[assistData.AssistLocation].EngineerManager
+        local target=nil
+        if not engineerManager then
+            WARN('* AI-RNG: FinishStructurePriorityAIRNG can\'t find engineer manager' )
+            self:PlatoonDisband()
+            return
+        end
+        for _,cat in assistData.AssistPriority do
+            local units = aiBrain:GetUnitsAroundPoint(cat, engineerManager.Location, assistData.AssistRange, 'Ally')
+            local unfinishedunits={}
+            for k,v in units do
+                local FractionComplete = v:GetFractionComplete()
+                if FractionComplete < 1 and table.getn(v:GetGuards()) < 1 or (1-v:GetFractionComplete())*v:GetBlueprint().Economy.BuildCostMass > 30 then
+                    if not v.Dead and not v:BeenDestroyed() then
+                        table.insert(unfinishedunits,v)
+                    end
+                    break
+                end
+            end
+            if table.getn(unfinishedunits)>0 then
+                table.sort(unfinishedunits,function(a,b) return VDist3Sq(eng:GetPosition(),a:GetPosition())(1-a:GetFractionComplete())*a:GetBlueprint().Economy.BuildCostMass<VDist3Sq(eng:GetPosition(),b:GetPosition())*(1-b:GetFractionComplete())*b:GetBlueprint().Economy.BuildCostMass end)
+                self:Stop()
+                IssueRepair({eng},unfinishedunits[1])
+                target=unfinishedunits[1]
+                break
+            end
+        end
+        if not target then self.EngineerHasErrorRNG(eng) self:PlatoonDisband() return end
+        local count = 0
+        repeat
+            coroutine.yield(20)
+            if not aiBrain:PlatoonExists(self) then
+                return
+            elseif target:GetFractionComplete()==1 then
+                self:PlatoonDisband()
+                return
+            end
+            count = count + 1
+            if eng:IsIdleState() then break end
+        until count >= 30
+        self:PlatoonDisband()
+    end,
     EngineerHasErrorRNG = function(eng)
         for _=0,10 do
             for _=0,5 do
@@ -7305,183 +7355,5 @@ Platoon = Class(RNGAIPlatoon) {
             end
             WaitTicks(5)
         end
-    end,
-    ProcessBuildMexCommandRNG = function(eng, removeLastBuild)
-        --DUNCAN - Trying to stop commander leaving projects
-        if (not eng) or eng.Dead or (not eng.PlatoonHandle) or eng.Combat or eng.Upgrading or eng.GoingHome then
-            return
-        end
-
-        local aiBrain = eng.PlatoonHandle:GetBrain()
-        if not aiBrain or eng.Dead or not eng.EngineerBuildQueue or table.getn(eng.EngineerBuildQueue) == 0 then
-            if PlatoonExists(aiBrain, eng.PlatoonHandle) then
-                --LOG("*AI DEBUG: Disbanding Engineer Platoon in ProcessBuildCommand top " .. eng.Sync.id)
-                --if eng.CDRHome then --LOG('*AI DEBUG: Commander process build platoon disband...') end
-                if not eng.AssistSet and not eng.AssistPlatoon and not eng.UnitBeingAssist then
-                    --LOG('Disband engineer platoon start of process')
-                    eng.PlatoonHandle:PlatoonDisband()
-                end
-            end
-            if eng then eng.ProcessBuild = nil end
-            return
-        end
-
-        -- it wasn't a failed build, so we just finished something
-        if removeLastBuild then
-            table.remove(eng.EngineerBuildQueue, 1)
-        end
-
-        eng.ProcessBuildDone = false
-        IssueClearCommands({eng})
-        local commandDone = false
-        local PlatoonPos
-        while not eng.Dead and not commandDone and table.getn(eng.EngineerBuildQueue) > 0  do
-            local whatToBuild = eng.EngineerBuildQueue[1][1]
-            local buildLocation = {eng.EngineerBuildQueue[1][2][1], 0, eng.EngineerBuildQueue[1][2][2]}
-            if GetTerrainHeight(buildLocation[1], buildLocation[3]) > GetSurfaceHeight(buildLocation[1], buildLocation[3]) then
-                --land
-                buildLocation[2] = GetTerrainHeight(buildLocation[1], buildLocation[3])
-            else
-                --water
-                buildLocation[2] = GetSurfaceHeight(buildLocation[1], buildLocation[3])
-            end
-            local buildRelative = eng.EngineerBuildQueue[1][3]
-            if not eng.NotBuildingThread then
-                eng.NotBuildingThread = eng:ForkThread(eng.PlatoonHandle.WatchForNotBuildingRNG)
-            end
-            -- see if we can move there first
-            --LOG('Check if we can move to location')
-            --LOG('Unit is '..eng.UnitId)
-
-            if AIUtils.EngineerMoveWithSafePathRNG(aiBrain, eng, buildLocation) then
-                if not eng or eng.Dead or not eng.PlatoonHandle or not PlatoonExists(aiBrain, eng.PlatoonHandle) then
-                    if eng then eng.ProcessBuild = nil end
-                    return
-                end
-                --[[if AIUtils.IsMex(whatToBuild) and (not aiBrain:CanBuildStructureAt(whatToBuild, buildLocation)) then
-                    LOG('Cant build at mass location')
-                    LOG('*AI DEBUG: EngineerBuild AI ' ..eng.Sync.id)
-                    LOG('Build location is '..repr(buildLocation))
-                    return
-                end]]
-                aiBrain:BuildStructure(eng, whatToBuild, {buildLocation[1], buildLocation[3], 0}, buildRelative)
-                local engStuckCount = 0
-                local Lastdist
-                local dist
-                while not eng.Dead do
-                    PlatoonPos = eng:GetPosition()
-                    dist = VDist2(PlatoonPos[1] or 0, PlatoonPos[3] or 0, buildLocation[1] or 0, buildLocation[3] or 0)
-                    if dist < 12 then
-                        break
-                    end
-                    if Lastdist ~= dist then
-                        engStuckCount = 0
-                        Lastdist = dist
-                    else
-                        engStuckCount = engStuckCount + 1
-                        --LOG('* AI-RNG: * EngineerBuildAI: has no moved during move to build position look, adding one, current is '..engStuckCount)
-                        if engStuckCount > 40 and not eng:IsUnitState('Building') then
-                            --LOG('* AI-RNG: * EngineerBuildAI: Stuck while moving to build position. Stuck='..engStuckCount)
-                            break
-                        end
-                    end
-
-                    if eng:IsUnitState("Moving") or eng:IsUnitState("Capturing") then
-                        if GetNumUnitsAroundPoint(aiBrain, categories.LAND * categories.ENGINEER * (categories.TECH1 + categories.TECH2), PlatoonPos, 10, 'Enemy') > 0 then
-                            local enemyEngineer = GetUnitsAroundPoint(aiBrain, categories.LAND * categories.ENGINEER * (categories.TECH1 + categories.TECH2), PlatoonPos, 10, 'Enemy')
-                            if enemyEngineer then
-                                local enemyEngPos
-                                for _, unit in enemyEngineer do
-                                    if unit and not unit.Dead and unit:GetFractionComplete() == 1 then
-                                        enemyEngPos = unit:GetPosition()
-                                        if VDist2Sq(PlatoonPos[1], PlatoonPos[3], enemyEngPos[1], enemyEngPos[3]) < 100 then
-                                            IssueStop({eng})
-                                            IssueClearCommands({eng})
-                                            IssueReclaim({eng}, enemyEngineer[1])
-                                            break
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end
-                    WaitTicks(7)
-                end
-                if not eng or eng.Dead or not eng.PlatoonHandle or not PlatoonExists(aiBrain, eng.PlatoonHandle) then
-                    if eng then eng.ProcessBuild = nil end
-                    return
-                end
-                -- cancel all commands, also the buildcommand for blocking mex to check for reclaim or capture
-                eng.PlatoonHandle:Stop()
-                -- check to see if we need to reclaim or capture...
-                RUtils.EngineerTryReclaimCaptureArea(aiBrain, eng, buildLocation)
-                    -- check to see if we can repair
-                AIUtils.EngineerTryRepair(aiBrain, eng, whatToBuild, buildLocation)
-                        -- otherwise, go ahead and build the next structure there
-                --LOG('First marker location '..buildLocation[1]..':'..buildLocation[3])
-                --aiBrain:BuildStructure(eng, whatToBuild, {buildLocation[1], buildLocation[3], 0}, buildRelative)
-                aiBrain:BuildStructure(eng, whatToBuild, {buildLocation[1], buildLocation[3], 0}, buildRelative)
-                if whatToBuild == 'ueb1103' or whatToBuild == 'uab1103' or whatToBuild == 'urb1103' or whatToBuild == 'xsb1103' then
-                    --LOG('What to build was a mass extractor')
-                    if EntityCategoryContains(categories.ENGINEER - categories.COMMAND, eng) then
-                        local currentmexpos=buildLocation
-                        for _=0,10,1 do
-                            if MABC.CanBuildOnMassEng2(aiBrain, currentmexpos, 40) then
-                                --LOG('We can build on a mass marker within 30')
-                                local massMarker = RUtils.GetClosestMassMarkerToPos(aiBrain, currentmexpos)
-                                --LOG('Mass Marker'..repr(massMarker))
-                                --LOG('Attempting second mass marker')
-                                RUtils.EngineerTryReclaimCaptureArea(aiBrain, eng, massMarker)
-                                AIUtils.EngineerTryRepair(aiBrain, eng, whatToBuild, massMarker)
-                                aiBrain:BuildStructure(eng, whatToBuild, {massMarker[1], massMarker[3], 0}, buildRelative)
-                                local newEntry = {whatToBuild, {massMarker[1], massMarker[3], 0}, buildRelative}
-                                table.insert(eng.EngineerBuildQueue, newEntry)
-                                currentmexpos=massMarker
-                            else
-                                break
-                            end
-                        end
-                    end
-                end
-                if not eng.NotBuildingThread then
-                    eng.NotBuildingThread = eng:ForkThread(eng.PlatoonHandle.WatchForNotBuildingRNG)
-                end
-                --LOG('Build commandDone set true')
-                commandDone = true
-            else
-                -- we can't move there, so remove it from our build queue
-                table.remove(eng.EngineerBuildQueue, 1)
-            end
-            WaitTicks(2)
-        end
-        --LOG('EnginerBuildQueue : '..table.getn(eng.EngineerBuildQueue)..' Contents '..repr(eng.EngineerBuildQueue))
-        if not eng.Dead and table.getn(eng.EngineerBuildQueue) <= 0 and eng.PlatoonHandle.PlatoonData.Construction.RepeatBuild then
-            --LOG('Starting RepeatBuild')
-            local distance = eng.PlatoonHandle.PlatoonData.Construction.Distance
-            local type = eng.PlatoonHandle.PlatoonData.Construction.Type
-            local engpos = eng:GetPosition()
-            if eng.PlatoonHandle.PlatoonData.Construction.RepeatBuild and eng.PlatoonHandle.PlanName then
-                --LOG('Repeat Build is set for :'..eng.Sync.id)
-                if type == 'Mass' and distance then
-                    if MABC.CanBuildOnMassEng(aiBrain, engpos, distance, -500, 1, 0, 'AntiSurface', 1) then
-                        eng.PlatoonHandle:MexBuildAIRNG()
-                        --eng.PlatoonHandle:SetAIPlanRNG( eng.PlatoonHandle.PlanName, aiBrain)
-                        return
-                    end
-                else
-                    WARN('Invalid Construction Type or Distance, Expected : Mass, number')
-                end
-            end
-        end
-        -- final check for if we should disband
-        if not eng or eng.Dead or table.getn(eng.EngineerBuildQueue) <= 0 then
-            if eng.PlatoonHandle and PlatoonExists(aiBrain, eng.PlatoonHandle) then
-                --LOG('buildqueue 0 disband for'..eng.UnitId)
-                eng.PlatoonHandle:PlatoonDisband()
-            end
-            if eng then eng.ProcessBuild = nil end
-            return
-        end
-        if eng then eng.ProcessBuild = nil end
     end,
 }

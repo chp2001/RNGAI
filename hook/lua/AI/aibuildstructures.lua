@@ -441,7 +441,9 @@ function AIBuildAdjacencyPriorityRNG(aiBrain, builder, buildingType , closeToBui
                         local differenceZ=math.abs(targetSize.SkirtSizeZ-unitSize.SkirtSizeZ)
                         local offsetZ=math.floor(differenceZ/2)
                         local offsetfactory=0
-                        if EntityCategoryContains(categories.FACTORY, v) and (buildingType=='T1LandFactory' or buildingType=='T2SupportLandFactory' or buildingType=='T3SupportLandFactory') then
+                        if cons.Spacing then
+                            offsetfactory=cons.Spacing
+                        elseif EntityCategoryContains(categories.FACTORY, v) and (buildingType=='T1LandFactory' or buildingType=='T2SupportLandFactory' or buildingType=='T3SupportLandFactory') then
                             offsetfactory=2
                         end
                         -- Top/bottom of unit

@@ -127,7 +127,13 @@ BuilderGroup {
             NumAssistees = 5,
             Construction = {
                 AdjacencyCategory = (categories.STRUCTURE * categories.SHIELD),
-                AvoidCategory = categories.STRUCTURE * categories.FACTORY * categories.TECH2,
+                AdjacencyPriority = {
+                    categories.FACTORY * categories.STRUCTURE * categories.LAND * categories.SUPPORTFACTORY,
+                    categories.STRUCTURE * categories.SHIELD,
+                    categories.FACTORY * categories.STRUCTURE * categories.LAND * categories.TECH1,
+                },
+                AdjacencyBias = 'ForwardClose',
+                AvoidCategory = categories.STRUCTURE * categories.FACTORY * (categories.TECH2 + categories.TECH3) - categories.SUPPORTFACTORY,
                 maxUnits = 1,
                 maxRadius = 5,
                 BuildClose = true,
@@ -156,7 +162,13 @@ BuilderGroup {
             NumAssistees = 5,
             Construction = {
                 AdjacencyCategory = (categories.STRUCTURE * categories.SHIELD),
-                AvoidCategory = categories.STRUCTURE * categories.FACTORY * categories.TECH2,
+                AdjacencyPriority = {
+                    categories.FACTORY * categories.STRUCTURE * categories.LAND * categories.SUPPORTFACTORY,
+                    categories.STRUCTURE * categories.SHIELD,
+                    categories.FACTORY * categories.STRUCTURE * categories.LAND * categories.TECH1,
+                },
+                AdjacencyBias = 'ForwardClose',
+                AvoidCategory = categories.STRUCTURE * categories.FACTORY * (categories.TECH2 + categories.TECH3) - categories.SUPPORTFACTORY,
                 maxUnits = 1,
                 maxRadius = 5,
                 BuildClose = true,
@@ -184,9 +196,16 @@ BuilderGroup {
             Construction = {
                 BuildClose = false,
                 AdjacencyCategory = (categories.STRUCTURE * categories.SHIELD),
-                AvoidCategory = categories.STRUCTURE * categories.ARTILLERY * categories.TECH2,
+                AdjacencyPriority = {
+                    categories.ENERGYPRODUCTION * categories.STRUCTURE * categories.TECH3,
+                    categories.ENERGYPRODUCTION * categories.STRUCTURE * categories.TECH2,
+                    categories.STRUCTURE * categories.SHIELD,
+                    categories.ENERGYPRODUCTION * categories.STRUCTURE * categories.TECH1,
+                },
+                AdjacencyBias = 'ForwardClose',
+                AvoidCategory = categories.STRUCTURE * categories.FACTORY * (categories.TECH2 + categories.TECH3) - categories.SUPPORTFACTORY,
                 maxUnits = 1,
-                maxRadius = 35,
+                maxRadius = 5,
                 BuildStructures = {
                     'T2Artillery',
                 },
@@ -212,14 +231,20 @@ BuilderGroup {
             NumAssistees = 5,
             Construction = {
                 AdjacencyCategory = (categories.STRUCTURE * categories.SHIELD),
-                AvoidCategory = categories.STRUCTURE * categories.FACTORY * categories.TECH2,
+                AdjacencyPriority = {
+                    categories.FACTORY * categories.STRUCTURE * categories.LAND * categories.SUPPORTFACTORY,
+                    categories.STRUCTURE * categories.SHIELD,
+                    categories.FACTORY * categories.STRUCTURE * categories.LAND * categories.TECH1,
+                },
+                AdjacencyBias = 'ForwardClose',
+                AvoidCategory = categories.STRUCTURE * categories.FACTORY * (categories.TECH2 + categories.TECH3) - categories.SUPPORTFACTORY,
                 maxUnits = 1,
                 maxRadius = 5,
                 BuildClose = true,
                 BuildStructures = {
                     'T3AADefense',
                 },
-                AdjacencyCategory = categories.STRUCTURE * (categories.SHIELD + categories.FACTORY),
+                --AdjacencyCategory = categories.STRUCTURE * (categories.SHIELD + categories.FACTORY),
                 Location = 'LocationType',
             }
         }
@@ -242,9 +267,16 @@ BuilderGroup {
             Construction = {
                 BuildClose = true,
                 AdjacencyCategory = (categories.ENERGYPRODUCTION * categories.TECH3 + categories.TECH2) + (categories.STRUCTURE * categories.FACTORY),
+                AdjacencyPriority = {
+                    categories.FACTORY * categories.STRUCTURE * categories.LAND - categories.TECH1 - categories.SUPPORTFACTORY,
+                    categories.ENERGYPRODUCTION * categories.TECH3 + categories.TECH2,
+                    categories.MASSEXTRACTION - categories.TECH1,
+                },
+                AdjacencyBias = 'ForwardClose',
+                Spacing=4,
                 AvoidCategory = categories.STRUCTURE * categories.ANTIMISSILE * categories.TECH2 * categories.DEFENSE,
                 maxUnits = 1,
-                maxRadius = 5,
+                maxRadius = 8,
                 BuildStructures = {
                     'T2MissileDefense',
                 },
@@ -261,7 +293,7 @@ BuilderGroup {
             { MIBC, 'GreaterThanGameTimeRNG', { 600 } },
             { UCBC, 'UnitsLessAtLocation', { 'LocationType', 1, categories.TACTICALMISSILEPLATFORM}},
             { EBC, 'GreaterThanEconEfficiencyOverTimeRNG', { 1.3, 1.1}},
-            { EBC, 'GreaterThanEconStorageRatioRNG', { 0.1, 0.80}},
+            { EBC, 'GreaterThanEconStorageRatioRNG', { 0.3, 0.80}},
             { UCBC, 'UnitCapCheckLess', { .9 } },
         },
         BuilderType = 'Any',
@@ -326,6 +358,13 @@ BuilderGroup {
                 BuildClose = true,
                 maxUnits = 1,
                 AdjacencyCategory = categories.STRUCTURE * (categories.SHIELD + categories.FACTORY),
+                AdjacencyPriority = {
+                    categories.FACTORY * categories.STRUCTURE * categories.LAND * categories.SUPPORTFACTORY,
+                    categories.STRUCTURE * categories.SHIELD,
+                    categories.FACTORY * categories.STRUCTURE * categories.LAND * categories.TECH1,
+                },
+                AdjacencyBias = 'ForwardClose',
+                AvoidCategory = categories.STRUCTURE * categories.FACTORY * (categories.TECH2 + categories.TECH3) - categories.SUPPORTFACTORY,
                 BuildStructures = {
                     'T3AADefense',
                 },

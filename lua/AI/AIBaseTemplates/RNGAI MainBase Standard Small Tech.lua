@@ -153,6 +153,13 @@ BaseBuilderTemplate {
 
     },
     ExpansionFunction = function(aiBrain, location, markerType)
+        local personality = ScenarioInfo.ArmySetup[aiBrain.Name].AIPersonality
+        local mapSizeX, mapSizeZ = GetMapSize()
+        if personality == 'RNGTech' or personality == 'RNGTechcheat' then
+            --LOG('* AI-RNG: ### M-FirstBaseFunction '..personality)
+            --LOG('* AI-RNG: Map size is small', mapSizeX, mapSizeZ)
+            return 1000, 'RNGTech'
+        end
         return -1
     end,
     FirstBaseFunction = function(aiBrain)
