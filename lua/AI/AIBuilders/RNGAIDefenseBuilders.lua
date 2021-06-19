@@ -128,9 +128,8 @@ BuilderGroup {
             Construction = {
                 AdjacencyCategory = (categories.STRUCTURE * categories.SHIELD),
                 AdjacencyPriority = {
-                    categories.FACTORY * categories.STRUCTURE * categories.LAND * categories.SUPPORTFACTORY,
+                    categories.FACTORY * categories.STRUCTURE * categories.LAND * categories.SUPPORTFACTORY + categories.FACTORY * categories.STRUCTURE * categories.LAND * categories.TECH1,
                     categories.STRUCTURE * categories.SHIELD,
-                    categories.FACTORY * categories.STRUCTURE * categories.LAND * categories.TECH1,
                 },
                 AdjacencyBias = 'ForwardClose',
                 AvoidCategory = categories.STRUCTURE * categories.FACTORY * (categories.TECH2 + categories.TECH3) - categories.SUPPORTFACTORY,

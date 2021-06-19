@@ -50,8 +50,8 @@ BuilderGroup {
                 },
                 AdjacencyBias = 'Forward',
                 AvoidCategory = categories.STRUCTURE * categories.SHIELD,
-                maxUnits = 1,
-                maxRadius = 35,
+                maxUnits = 2,
+                maxRadius = 20,
                 LocationType = 'LocationType',
                 BuildStructures = {
                     'T2ShieldDefense',
@@ -94,8 +94,8 @@ BuilderGroup {
                 },
                 AdjacencyBias = 'Forward',
                 AvoidCategory = categories.STRUCTURE * categories.SHIELD,
-                maxUnits = 1,
-                maxRadius = 35,
+                maxUnits = 2,
+                maxRadius = 20,
                 LocationType = 'LocationType',
                 BuildStructures = {
                     'T2ShieldDefense',
@@ -138,8 +138,8 @@ BuilderGroup {
                     categories.FACTORY * categories.AIR,
                 },
                 AdjacencyBias = 'Forward',
-                AvoidCategory = categories.STRUCTURE * categories.SHIELD,
-                maxUnits = 1,
+                AvoidCategory = categories.STRUCTURE * categories.SHIELD * categories.TECH3,
+                maxUnits = 2,
                 maxRadius = 35,
                 LocationType = 'LocationType',
                 BuildStructures = {

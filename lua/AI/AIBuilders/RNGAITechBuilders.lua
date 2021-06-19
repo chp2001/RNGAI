@@ -826,6 +826,82 @@ BuilderGroup {
         },
         BuilderType = 'Any',
     },
+    Builder {
+        BuilderName = 'RNG Tech T1 Engineer Uncap Platoon',
+        PlatoonTemplate = 'EngineerBuilderRNG',
+        PlatoonAIPlan = 'ReclaimStructuresRNG',
+        DelayEqualBuildPlattons = {'UnCap', 12},
+        Priority = 1050,
+        InstanceCount = 10,
+        BuilderConditions = {
+            { UCBC, 'CheckBuildPlatoonDelayRNG', { 'UnCap' }},
+            { UCBC, 'PgenCapsToReclaimPlatoonRatio', {}},
+            { EBC, 'GreaterThanEconEfficiencyOverTimeRNG', { -0.1, 0.9 }},
+            { EBC, 'GreaterThanEconStorageCurrentRNG', { -3, 500 } },
+            },
+        BuilderData = {
+            Location = 'LocationType',
+            Reclaim = {categories.STRUCTURE * categories.ENERGYPRODUCTION},
+            MexCapCat=categories.MASSEXTRACTION - categories.TECH1,
+        },
+        BuilderType = 'Any',
+    },
+    Builder {
+        BuilderName = 'RNG Tech T1 Engineer Uncap Platoon T3',
+        PlatoonTemplate = 'EngineerBuilderT123RNG',
+        PlatoonAIPlan = 'ReclaimStructuresRNG',
+        DelayEqualBuildPlattons = {'UnCap', 12},
+        Priority = 1080,
+        InstanceCount = 10,
+        BuilderConditions = {
+            { UCBC, 'CheckBuildPlatoonDelayRNG', { 'UnCap' }},
+            { UCBC, 'PgenCapsToReclaimPlatoonRatio', {}},
+            { EBC, 'GreaterThanEconStorageCurrentRNG', { -3, 500 } },
+            },
+        BuilderData = {
+            Location = 'LocationType',
+            Reclaim = {categories.STRUCTURE * categories.ENERGYPRODUCTION},
+            MexCapCat=categories.MASSEXTRACTION * categories.TECH3,
+        },
+        BuilderType = 'Any',
+    },
+    Builder {
+        BuilderName = 'RNG Tech Mex Cap Engineer',
+        PlatoonTemplate = 'EngineerBuilderT123RNG',
+        Priority = 900,
+        DelayEqualBuildPlattons = {'MassStorage', 2},
+        InstanceCount = 2,
+        BuilderConditions = {
+            { UCBC, 'CheckBuildPlatoonDelayRNG', { 'MassStorage' }},
+            { UCBC, 'MexesToCap', { categories.MASSEXTRACTION - categories.TECH1 } },
+            { UCBC, 'HaveGreaterThanUnitsWithCategory', { 2, categories.MASSEXTRACTION * (categories.TECH2 + categories.TECH3)}},
+            { EBC, 'GreaterThanEconEfficiencyRNG', { 0.8, 1.1 }},
+            { UCBC, 'UnitCapCheckLess', { .8 } },
+        },
+        BuilderType = 'Any',
+        BuilderData = {
+            Construction = {
+                AdjacencyCategory = categories.MASSEXTRACTION * (categories.TECH2 + categories.TECH3),
+                AdjacencyPriority = {
+                    categories.STRUCTURE * categories.MASSEXTRACTION * categories.TECH3,
+                    categories.STRUCTURE * categories.MASSEXTRACTION * categories.TECH2,
+                },
+                AdjacencyBias = 'BackClose',
+                AdjacencyDistance = 100,
+                AdjRequired = true,
+                BuildClose = false,
+                ThreatMin = -3,
+                ThreatMax = 0,
+                ThreatRings = 0,
+                BuildStructures = {
+                    'MassStorage',
+                    'MassStorage',
+                    'MassStorage',
+                    'MassStorage',
+                }
+            }
+        }
+    },
 }
 BuilderGroup {
     BuilderGroupName = 'RNG Tech Energy Builder',
@@ -861,11 +937,16 @@ BuilderGroup {
                     categories.ENERGYPRODUCTION * categories.STRUCTURE,
                 },
                 AdjacencyDistance = 50,
-                AvoidCategory = categories.ENERGYPRODUCTION,
+                AvoidCategory = categories.MASSEXTRACTION - categories.TECH1,
                 maxUnits = 1,
                 maxRadius = 2.5,
+                AdjRequired = true,
                 AdjacencyBias = 'BackClose',
+                DoQueue=true,
                 BuildStructures = {
+                    'T1EnergyProduction',
+                    'T1EnergyProduction',
+                    'T1EnergyProduction',
                     'T1EnergyProduction',
                 },
             }
@@ -903,11 +984,16 @@ BuilderGroup {
                     categories.ENERGYPRODUCTION * categories.STRUCTURE,
                 },
                 AdjacencyDistance = 50,
-                AvoidCategory = categories.ENERGYPRODUCTION,
+                AvoidCategory = categories.MASSEXTRACTION - categories.TECH1,
                 maxUnits = 1,
                 maxRadius = 2.5,
                 AdjacencyBias = 'BackClose',
+                AdjRequired = true,
+                DoQueue=true,
                 BuildStructures = {
+                    'T1EnergyProduction',
+                    'T1EnergyProduction',
+                    'T1EnergyProduction',
                     'T1EnergyProduction',
                 },
             }

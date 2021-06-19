@@ -452,7 +452,7 @@ function AIBuildAdjacencyPriorityRNG(aiBrain, builder, buildingType , closeToBui
                             local testPos2 = { targetPos[1] + (i * 1), targetPos[3]+targetSize.SkirtSizeZ/2+(unitSize.SkirtSizeZ/2)+offsetfactory, 0 }
                             -- check if the buildplace is to close to the border or inside buildable area
                             if testPos[1] > 8 and testPos[1] < ScenarioInfo.size[1] - 8 and testPos[2] > 8 and testPos[2] < ScenarioInfo.size[2] - 8 then
-                                --ForkThread(RNGtemporaryrenderbuildsquare,testPos,unitSize.SkirtSizeX,unitSize.SkirtSizeZ)
+                                ForkThread(RNGtemporaryrenderbuildsquare,testPos,unitSize.SkirtSizeX,unitSize.SkirtSizeZ)
                                 --table.insert(template[1], testPos)
                                 if aiBrain:CanBuildStructureAt(whatToBuild, normalposition(testPos)) then
                                     if cons.AvoidCategory and GetNumUnitsAroundPoint(aiBrain, cons.AvoidCategory, normalposition(testPos), cons.maxRadius, 'Ally')<cons.maxUnits then
@@ -465,7 +465,7 @@ function AIBuildAdjacencyPriorityRNG(aiBrain, builder, buildingType , closeToBui
                                 end
                             end
                             if testPos2[1] > 8 and testPos2[1] < ScenarioInfo.size[1] - 8 and testPos2[2] > 8 and testPos2[2] < ScenarioInfo.size[2] - 8 then
-                                --ForkThread(RNGtemporaryrenderbuildsquare,testPos2,unitSize.SkirtSizeX,unitSize.SkirtSizeZ)
+                                ForkThread(RNGtemporaryrenderbuildsquare,testPos2,unitSize.SkirtSizeX,unitSize.SkirtSizeZ)
                                 --table.insert(template[1], testPos2)
                                 if aiBrain:CanBuildStructureAt(whatToBuild, normalposition(testPos2)) then
                                     if cons.AvoidCategory and GetNumUnitsAroundPoint(aiBrain, cons.AvoidCategory, normalposition(testPos2), cons.maxRadius, 'Ally')<cons.maxUnits then
@@ -483,7 +483,7 @@ function AIBuildAdjacencyPriorityRNG(aiBrain, builder, buildingType , closeToBui
                             local testPos = { targetPos[1]-targetSize.SkirtSizeX/2-(unitSize.SkirtSizeX/2)-offsetfactory, targetPos[3] + (i * 1), 0 }
                             local testPos2 = { targetPos[1]+targetSize.SkirtSizeX/2+(unitSize.SkirtSizeX/2)+offsetfactory, targetPos[3] + (i * 1), 0 }
                             if testPos[1] > 8 and testPos[1] < ScenarioInfo.size[1] - 8 and testPos[2] > 8 and testPos[2] < ScenarioInfo.size[2] - 8 then
-                                --ForkThread(RNGtemporaryrenderbuildsquare,testPos,unitSize.SkirtSizeX,unitSize.SkirtSizeZ)
+                                ForkThread(RNGtemporaryrenderbuildsquare,testPos,unitSize.SkirtSizeX,unitSize.SkirtSizeZ)
                                 --table.insert(template[1], testPos)
                                 if aiBrain:CanBuildStructureAt(whatToBuild, normalposition(testPos)) then
                                     if cons.AvoidCategory and GetNumUnitsAroundPoint(aiBrain, cons.AvoidCategory, normalposition(testPos), cons.maxRadius, 'Ally')<cons.maxUnits then
@@ -496,7 +496,7 @@ function AIBuildAdjacencyPriorityRNG(aiBrain, builder, buildingType , closeToBui
                                 end
                             end
                             if testPos2[1] > 8 and testPos2[1] < ScenarioInfo.size[1] - 8 and testPos2[2] > 8 and testPos2[2] < ScenarioInfo.size[2] - 8 then
-                                --ForkThread(RNGtemporaryrenderbuildsquare,testPos2,unitSize.SkirtSizeX,unitSize.SkirtSizeZ)
+                                ForkThread(RNGtemporaryrenderbuildsquare,testPos2,unitSize.SkirtSizeX,unitSize.SkirtSizeZ)
                                 --table.insert(template[1], testPos2)
                                 if aiBrain:CanBuildStructureAt(whatToBuild, normalposition(testPos2)) then
                                     if cons.AvoidCategory and GetNumUnitsAroundPoint(aiBrain, cons.AvoidCategory, normalposition(testPos2), cons.maxRadius, 'Ally')<cons.maxUnits then
@@ -538,7 +538,7 @@ function AIBuildAdjacencyPriorityRNG(aiBrain, builder, buildingType , closeToBui
                     end
                 end
             end
-            -- build near the base the engineer is part of, rather than the engineer location
+            --[[ build near the base the engineer is part of, rather than the engineer location
             local baseLocation = {nil, nil, nil}
             if builder.BuildManagerData and builder.BuildManagerData.EngineerManager then
                 baseLocation = builder.BuildManagerdata.EngineerManager.Location
@@ -551,7 +551,7 @@ function AIBuildAdjacencyPriorityRNG(aiBrain, builder, buildingType , closeToBui
                     AddToBuildQueue(aiBrain, builder, whatToBuild, location, false)
                     return true
                 end
-            end
+            end]]
         end
         -- Build in a regular spot if adjacency not found
         if cons.AdjRequired then

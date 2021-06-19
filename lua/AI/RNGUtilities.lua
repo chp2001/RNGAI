@@ -3461,7 +3461,7 @@ function MexUpgradeManagerRNG(aiBrain)
             continue
         end]]
         if aiBrain.cmanager.categoryspend.mex.T1+aiBrain.cmanager.categoryspend.mex.T2<aiBrain.cmanager.income.r.m*ratio then
-            table.sort(mexes,function(a,b) return VDist3Sq(a:GetPosition(),homepos)/VDist3Sq(aiBrain.emanager.enemy.Position,a:GetPosition())/VDist3Sq(aiBrain.emanager.enemy.Position,a:GetPosition())*a.UCost*a.UCost*a.TMCost*a.UECost*a.UEmult*a.UEmult*a.TAge/a.UMmult/a.UMmult<VDist3Sq(b:GetPosition(),homepos)/VDist3Sq(aiBrain.emanager.enemy.Position,b:GetPosition())/VDist3Sq(aiBrain.emanager.enemy.Position,b:GetPosition())*b.UCost*b.UCost*b.TMCost*b.UECost*b.UEmult*b.UEmult*b.TAge/b.UMmult/b.UMmult end)
+            table.sort(mexes,function(a,b) return (VDist3Sq(a:GetPosition(),homepos)+VDist3Sq(aiBrain.emanager.enemy.Position,a:GetPosition()))*a.UCost*a.UCost*a.TMCost*a.UECost*a.UEmult*a.UEmult*a.TAge/a.UMmult/a.UMmult<(VDist3Sq(b:GetPosition(),homepos)+VDist3Sq(aiBrain.emanager.enemy.Position,b:GetPosition()))*b.UCost*b.UCost*b.TMCost*b.UECost*b.UEmult*b.UEmult*b.TAge/b.UMmult/b.UMmult end)
             local startval=aiBrain.cmanager.income.r.m*ratio-(aiBrain.cmanager.categoryspend.mex.T1+aiBrain.cmanager.categoryspend.mex.T2)
             --local starte=aiBrain.cmanager.income.r.e*1.3-aiBrain.cmanager.spend.e
             for _,v in mexes do
@@ -3480,11 +3480,20 @@ function DisplayMarkerAdjacency(aiBrain)
     local expansionMarkers = Scenario.MasterChain._MASTERCHAIN_.Markers
     aiBrain.RNGAreas={}
     aiBrain.renderlines={}
+    aiBrain.armyspots={}
+    aiBrain.expandspots={}
+    aiBrain.rendercircles={}
     for k,marker in expansionMarkers do
         local node=false
+        local expand=false
+        --LOG(repr(k)..' marker type is '..repr(marker.type))
         for i, v in STR_GetTokens(marker.type,' ') do
             if v=='Node' then
                 node=true
+                break
+            end
+            if v=='Expansion' then
+                expand=true
                 break
             end
         end
@@ -3492,12 +3501,65 @@ function DisplayMarkerAdjacency(aiBrain)
             aiBrain.RNGAreas[k]={}
             InfectMarkersRNG(aiBrain,marker,k)
         end
+        if expand then
+            table.insert(aiBrain.expandspots,{marker,k})
+        end
+        if not node and not expand then
+            for _,v in STR_GetTokens(k,'_') do
+                if v=='ARMY' then
+                    table.insert(aiBrain.armyspots,{marker,k})
+                end
+            end
+        end
+    end
+    for _,army in aiBrain.armyspots do
+        local closestpath=Scenario.MasterChain._MASTERCHAIN_.Markers[AIAttackUtils.GetClosestPathNodeInRadiusByLayer(army[1].position,25,'Land').name]
+        LOG('closestpath is '..repr(closestpath))
+        DoArmySpotDistanceInfect(aiBrain,closestpath,army[2])
+    end
+    for _,marker in expansionMarkers do
+        if marker.armydists then
+            local bestdist=999999
+            local bestarmy=nil
+            for k,v in marker.armydists do
+                if v<bestdist then
+                    bestdist=v
+                    bestarmy=k
+                end
+            end
+            if bestarmy then
+                marker.closestarmy=bestarmy
+                --table.insert(aiBrain.renderlines,{marker.position,Scenario.MasterChain._MASTERCHAIN_.Markers[bestarmy].position,marker.type})
+            end
+        end
+    end
+    for _,marker in expansionMarkers do
+        local surround=0
+        local border=false
+        if marker.closestarmy then
+            for i, node in STR_GetTokens(marker.adjacentTo or '', ' ') do
+                if Scenario.MasterChain._MASTERCHAIN_.Markers[node].closestarmy then
+                    surround=surround+1
+                end
+                if Scenario.MasterChain._MASTERCHAIN_.Markers[node].closestarmy and Scenario.MasterChain._MASTERCHAIN_.Markers[node].closestarmy~=marker.closestarmy then
+                    border=true
+                end
+            end
+            if border or surround<=3 then
+                table.insert(aiBrain.rendercircles,marker.position)
+                table.insert(aiBrain.renderlines,{marker.position,Scenario.MasterChain._MASTERCHAIN_.Markers[marker.closestarmy].position,marker.type})
+            end
+        end
     end
     LOG('RNGAreas:')
     for k,v in aiBrain.RNGAreas do
         LOG(repr(k)..' has '..repr(table.getn(v))..' nodes')
     end
-    --[[while not aiBrain.defeat do
+    ---[[
+    while not aiBrain.defeat do
+        for _,v in aiBrain.rendercircles do
+            DrawCircle(v,5,'FFBF9C1E')
+        end
         for _,v in aiBrain.renderlines do
             if v[3]=='Land Path Node' then
                 DrawLine(v[1],v[2],'FFBF9C1E')
@@ -3506,15 +3568,32 @@ function DisplayMarkerAdjacency(aiBrain)
             end
         end
         WaitTicks(2)
-    end]]
+    end
+    --]]
 end
 function InfectMarkersRNG(aiBrain,marker,graphname)
     marker.RNGArea=graphname
     table.insert(aiBrain.RNGAreas[graphname],marker)
     for i, node in STR_GetTokens(marker.adjacentTo or '', ' ') do
-        table.insert(aiBrain.renderlines,{marker.position,Scenario.MasterChain._MASTERCHAIN_.Markers[node].position,marker.type})
         if not Scenario.MasterChain._MASTERCHAIN_.Markers[node].RNGArea then
             InfectMarkersRNG(aiBrain,Scenario.MasterChain._MASTERCHAIN_.Markers[node],graphname)
+        end
+    end
+end
+function DoArmySpotDistanceInfect(aiBrain,marker,army)
+    if not marker.armydists then
+        marker.armydists={}
+    end
+    if not marker.armydists[army] then
+        marker.armydists[army]=0
+    end
+    for i, node in STR_GetTokens(marker.adjacentTo or '', ' ') do
+        if node=='' then continue end
+        if not Scenario.MasterChain._MASTERCHAIN_.Markers[node].armydists[army] or Scenario.MasterChain._MASTERCHAIN_.Markers[node].armydists[army]>VDist3(marker.position,Scenario.MasterChain._MASTERCHAIN_.Markers[node].position)+marker.armydists[army] then
+            if not Scenario.MasterChain._MASTERCHAIN_.Markers[node].armydists then Scenario.MasterChain._MASTERCHAIN_.Markers[node].armydists={} end
+            Scenario.MasterChain._MASTERCHAIN_.Markers[node].armydists[army]=VDist3(marker.position,Scenario.MasterChain._MASTERCHAIN_.Markers[node].position)+marker.armydists[army]
+            --table.insert(aiBrain.renderlines,{marker.position,Scenario.MasterChain._MASTERCHAIN_.Markers[node].position,marker.type})
+            DoArmySpotDistanceInfect(aiBrain,Scenario.MasterChain._MASTERCHAIN_.Markers[node],army)
         end
     end
 end

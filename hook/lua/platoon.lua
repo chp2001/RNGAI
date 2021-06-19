@@ -2254,7 +2254,6 @@ Platoon = Class(RNGAIPlatoon) {
                 end
             end
         end
-
         if not eng or eng.Dead then
             WaitTicks(1)
             self:PlatoonDisband()
@@ -2710,11 +2709,19 @@ Platoon = Class(RNGAIPlatoon) {
     -------------------------------------------------------
     ProcessBuildCommandRNG = function(eng, removeLastBuild)
         --DUNCAN - Trying to stop commander leaving projects
+        local BuildTheQueue = function(aiBrain,eng)
+            for _,build in eng.EngineerBuildQueue do
+                RUtils.EngineerTryReclaimCaptureArea(aiBrain, eng, {build[2][1], GetSurfaceHeight(build[2][1], build[2][2]), build[2][2]})
+                AIUtils.EngineerTryRepair(aiBrain, eng, build[1], {build[2][1], GetSurfaceHeight(build[2][1], build[2][2]), build[2][2]})
+                aiBrain:BuildStructure(eng, build[1], build[2], build[3])
+            end
+        end
         if (not eng) or eng.Dead or (not eng.PlatoonHandle) or eng.Combat or eng.Upgrading or eng.GoingHome then
             return
         end
         if not eng.ProcessBuild then eng.ProcessBuild=true end
         local aiBrain = eng.PlatoonHandle:GetBrain()
+        ForkThread(eng.PlatoonHandle.RenderBuildQueue,aiBrain,eng)
         if not aiBrain or eng.Dead or not eng.EngineerBuildQueue or table.getn(eng.EngineerBuildQueue) == 0 then
             if PlatoonExists(aiBrain, eng.PlatoonHandle) then
                 --LOG("*AI DEBUG: Disbanding Engineer Platoon in ProcessBuildCommand top " .. eng.Sync.id)
@@ -2747,6 +2754,11 @@ Platoon = Class(RNGAIPlatoon) {
                 --water
                 buildLocation[2] = GetSurfaceHeight(buildLocation[1], buildLocation[3])
             end
+            --[[if not aiBrain:CanBuildStructureAt(whatToBuild,buildLocation) and eng.PlatoonHandle.PlatoonData.Construction.DoQueue then
+                eng.EngineerBuildQueue={}
+                eng.PlatoonHandle:EngineerBuildAIRNG()
+                return
+            end]]
             local buildRelative = eng.EngineerBuildQueue[1][3]
             if not eng.NotBuildingThread then
                 eng.NotBuildingThread = eng:ForkThread(eng.PlatoonHandle.WatchForNotBuildingRNG)
@@ -2766,7 +2778,7 @@ Platoon = Class(RNGAIPlatoon) {
                     LOG('Build location is '..repr(buildLocation))
                     return
                 end]]
-                aiBrain:BuildStructure(eng, whatToBuild, {buildLocation[1], buildLocation[3], 0}, buildRelative)
+                BuildTheQueue(aiBrain,eng)
                 local engStuckCount = 0
                 local Lastdist
                 local dist
@@ -2816,13 +2828,7 @@ Platoon = Class(RNGAIPlatoon) {
                 -- cancel all commands, also the buildcommand for blocking mex to check for reclaim or capture
                 eng.PlatoonHandle:Stop()
                 -- check to see if we need to reclaim or capture...
-                RUtils.EngineerTryReclaimCaptureArea(aiBrain, eng, buildLocation)
-                    -- check to see if we can repair
-                AIUtils.EngineerTryRepair(aiBrain, eng, whatToBuild, buildLocation)
-                        -- otherwise, go ahead and build the next structure there
-                --LOG('First marker location '..buildLocation[1]..':'..buildLocation[3])
-                --aiBrain:BuildStructure(eng, whatToBuild, {buildLocation[1], buildLocation[3], 0}, buildRelative)
-                aiBrain:BuildStructure(eng, whatToBuild, {buildLocation[1], buildLocation[3], 0}, buildRelative)
+                BuildTheQueue(aiBrain,eng)
                 if (whatToBuild == 'ueb1103' or whatToBuild == 'uab1103' or whatToBuild == 'urb1103' or whatToBuild == 'xsb1103') and eng.PlatoonHandle.PlatoonData.Construction.RepeatBuild then
                     --LOG('What to build was a mass extractor')
                     if EntityCategoryContains(categories.ENGINEER - categories.COMMAND, eng) then
@@ -6714,8 +6720,8 @@ Platoon = Class(RNGAIPlatoon) {
                             if not v or v.Dead then continue end
                             if v.Support and VDist3Sq(v:GetPosition(),platoon.Pos)>8*8 then
                                 IssueClearCommands({v})
-                                IssueMove({v},RUtils.lerpy(platoon.dest,platoon.home,{VDist3(v:GetPosition(),platoon.dest),30}))
-                                WaitTicks(1)
+                                IssueMove({v},RUtils.lerpy(platoon.dest,platoon.home,{VDist3(v:GetPosition(),platoon.dest),20}))
+                                --WaitTicks(1)
                                 continue
                             end
                             if v.Sniper and VDist3Sq(v:GetPosition(),targetPosition)<v.MaxWeaponRange*v.MaxWeaponRange or GetWeightedHealthRatio(v)<0.5 then
@@ -6726,7 +6732,7 @@ Platoon = Class(RNGAIPlatoon) {
                                 local strafeshift=RUtils.LerpyRotate(upos,smartPos,{4,math.random(-2,2)})
                                 IssueClearCommands({v})
                                 IssueMove({v},strafeshift)
-                                WaitTicks(1)
+                                --WaitTicks(1)
                             --[[else
                                 local upos=v:GetPosition()
                                 local tdist=VDist2(targetPosition[1],targetPosition[3],upos[1],upos[3])
@@ -6763,8 +6769,8 @@ Platoon = Class(RNGAIPlatoon) {
                             if not v or v.Dead then continue end
                             if v.Support and VDist3Sq(v:GetPosition(),platoon.Pos)>8*8 then
                                 IssueClearCommands({v})
-                                IssueMove({v},RUtils.lerpy(platoon.dest,platoon.home,{VDist3(v:GetPosition(),platoon.dest),30}))
-                                WaitTicks(1)
+                                IssueMove({v},RUtils.lerpy(platoon.dest,platoon.home,{VDist3(v:GetPosition(),platoon.dest),20}))
+                                --WaitTicks(1)
                                 continue
                             end
                             local upos=v:GetPosition()
@@ -6774,7 +6780,7 @@ Platoon = Class(RNGAIPlatoon) {
                             smartPos = {smartPos[1]+math.random(-1,1),smartPos[2],smartPos[3]+math.random(-1,1)}
                             IssueClearCommands({v})
                             IssueMove({v},smartPos)
-                            WaitTicks(1)
+                            --WaitTicks(1)
                         end
                         WaitTicks(15)
                     elseif targetDist<platoon.MaxWeaponRange*5 then
@@ -7115,6 +7121,9 @@ Platoon = Class(RNGAIPlatoon) {
         local data = self.PlatoonData
         local radius = aiBrain:PBMGetLocationRadius(data.Location)
         local categories = data.Reclaim
+        local eng=self:GetPlatoonUnits()[1]
+        local mexcapcat = data.MexCapCat
+        local initialized=false
         local counter = 0
         local reclaimcat
         local reclaimables
@@ -7126,27 +7135,69 @@ Platoon = Class(RNGAIPlatoon) {
             unitPos = self:GetPlatoonPosition()
             reclaimunit = false
             distance = false
-            for num,cat in categories do
-                if type(cat) == 'string' then
-                    reclaimcat = ParseEntityCategory(cat)
-                else
-                    reclaimcat = cat
+            if not mexcapcat then
+                for num,cat in categories do
+                    if type(cat) == 'string' then
+                        reclaimcat = ParseEntityCategory(cat)
+                    else
+                        reclaimcat = cat
+                    end
+                    reclaimables = aiBrain:GetListOfUnits(reclaimcat, false, true)
+                    table.sort(reclaimables,function(a,b) return VDist3Sq(unitPos,a:GetPosition())<VDist3Sq(unitPos,b:GetPosition()) end)
+                    for k,v in reclaimables do
+                        if not v.Dead and (not reclaimunit or VDist3(unitPos, v:GetPosition()) < radius) and unitPos and not v:IsUnitState('Upgrading') and v:GetFractionComplete() == 1 then
+                            reclaimunit = v
+                            break
+                        end
+                    end
+                    if reclaimunit then break end
                 end
-                reclaimables = aiBrain:GetListOfUnits(reclaimcat, false, true)
+            else
+                --LOG('mexcapcat starting')
+                local mexes = aiBrain:GetListOfUnits(mexcapcat,false,true)
+                --LOG('mexcatcap mexes contains '..repr(table.getn(mexes)))
+                reclaimables={}
+                for _,v in mexes do
+                    if not v or v.Dead then continue end
+                    --ForkThread(self.EngineerTemporaryLineRender,eng,eng:GetPosition(),'FF00FFFF',v:GetPosition())
+                    for _,cat in categories do
+                        local units=aiBrain:GetUnitsAroundPoint(cat, v:GetPosition(), 2.5, 'Ally')
+                        for _,unit in units do
+                            if unit and not unit.Dead then
+                                --ForkThread(self.EngineerTemporaryLineRender,eng,v:GetPosition(),'FFFFFF00',unit:GetPosition())
+                                table.insert(reclaimables, unit)
+                            end
+                        end
+                    end
+                end
+                --LOG('reclaimables contains '..repr(table.getn(reclaimables)))
                 table.sort(reclaimables,function(a,b) return VDist3Sq(unitPos,a:GetPosition())<VDist3Sq(unitPos,b:GetPosition()) end)
                 for k,v in reclaimables do
+                    IssueReclaim(self:GetPlatoonUnits(), v)
                     if not v.Dead and (not reclaimunit or VDist3(unitPos, v:GetPosition()) < radius) and unitPos and not v:IsUnitState('Upgrading') and v:GetFractionComplete() == 1 then
                         reclaimunit = v
                         break
                     end
                 end
-                if reclaimunit then break end
             end
             if reclaimunit and not reclaimunit.Dead then
+                if mexcapcat and not initialized then
+                    if not aiBrain.uncapplatoons then
+                        aiBrain.uncapplatoons={}
+                    end
+                    initialized=true
+                    table.insert(aiBrain.uncapplatoons,self)
+                end
                 counter = 0
                 -- Set ReclaimInProgress to prevent repairing (see RepairAI)
                 reclaimunit.ReclaimInProgress = true
-                IssueReclaim(self:GetPlatoonUnits(), reclaimunit)
+                if mexcapcat then
+                    for _,unit in reclaimables do
+                        IssueReclaim(self:GetPlatoonUnits(), unit)
+                    end
+                else 
+                    IssueReclaim(self:GetPlatoonUnits(), reclaimunit)
+                end
                 repeat
                     WaitSeconds(2)
                     if reclaimunit and not reclaimunit.Dead and reclaimunit:IsUnitState('Upgrading') then break end
@@ -7161,9 +7212,14 @@ Platoon = Class(RNGAIPlatoon) {
                         end
                     end
                 until allIdle
+                if not mexcapcat then
+                    self:PlatoonDisband()
+                    return
+                end
+            elseif not mexcapcat and (not reclaimunit or counter >= 5) then
                 self:PlatoonDisband()
                 return
-            elseif not reclaimunit or counter >= 5 then
+            elseif mexcapcat and table.getn(reclaimables)<1 then
                 self:PlatoonDisband()
                 return
             else
@@ -7288,6 +7344,7 @@ Platoon = Class(RNGAIPlatoon) {
             local units = aiBrain:GetUnitsAroundPoint(cat, engineerManager.Location, assistData.AssistRange, 'Ally')
             local unfinishedunits={}
             for k,v in units do
+                if v.Dead or not v then continue end
                 local FractionComplete = v:GetFractionComplete()
                 if FractionComplete < 1 and table.getn(v:GetGuards()) < 1 or (1-v:GetFractionComplete())*v:GetBlueprint().Economy.BuildCostMass > 30 then
                     if not v.Dead and not v:BeenDestroyed() then
@@ -7330,20 +7387,15 @@ Platoon = Class(RNGAIPlatoon) {
     end,
     EngineerTemporaryLineRender = function(eng,pos,color,pos2)
         if not pos2 then
-            for _=0,10 do
-                for _=0,5 do
-                    DrawLinePop(eng:GetPosition(),pos,color)
-                    WaitTicks(2)
-                end
-                WaitTicks(5)
+            for _=0,25 do
+                if not eng or eng.Dead then return end
+                DrawLinePop(eng:GetPosition(),pos,color)
+                WaitTicks(2)
             end
         else
-            for _=0,10 do
-                for _=0,5 do
-                    DrawLinePop(pos,pos2,color)
-                    WaitTicks(2)
-                end
-                WaitTicks(5)
+            for _=0,25 do
+                DrawLinePop(pos,pos2,color)
+                WaitTicks(2)
             end
         end
     end,
@@ -7354,6 +7406,48 @@ Platoon = Class(RNGAIPlatoon) {
                 WaitTicks(2)
             end
             WaitTicks(5)
+        end
+    end,
+    RenderBuildQueue = function(aiBrain,eng)
+        LOG('renderbuildqueue starting')
+        if eng.renderbuildqueue then return end
+        eng.renderbuildqueue=true
+        WaitTicks(3)
+        local function normalposition(vec)
+            return {vec[1],GetSurfaceHeight(vec[1],vec[2]),vec[2]}
+        end
+        local function RNGtemporaryrenderbuildsquare(pos,x,y)
+            local pos1={pos[1]-x/2,pos[2]-y/2}
+            local pos2={pos1[1]+x,pos1[2]}
+            local pos3={pos2[1],pos2[2]+y}
+            local pos4={pos3[1]-x,pos3[2]}
+            for _=0,25 do
+                DrawLine(normalposition(pos1),normalposition(pos2),'FF4CFF00')
+                DrawLine(normalposition(pos2),normalposition(pos3),'FF4CFF00')
+                DrawLine(normalposition(pos3),normalposition(pos4),'FF4CFF00')
+                DrawLine(normalposition(pos4),normalposition(pos1),'FF4CFF00')
+                WaitTicks(2)
+            end
+        end
+        while not eng.Dead do
+            if not eng or eng.Dead then return end
+            if not eng.EngineerBuildQueue or table.getn(eng.EngineerBuildQueue)<1 then
+                DrawCircle(eng:GetPosition(),3,'FFFF0000')
+                WaitTicks(2)
+                continue
+            end
+            LOG('engineerbuild'..repr(eng.EngineerBuildQueue))
+            for i,v in eng.EngineerBuildQueue do
+                if i==1 then
+                    ForkThread(eng.PlatoonHandle.EngineerTemporaryLineRender,eng,normalposition(v[2]),'da4CFF00')
+                else
+                    ForkThread(eng.PlatoonHandle.EngineerTemporaryLineRender,eng,normalposition(eng.EngineerBuildQueue[i-1][2]),'aa4CFF00',normalposition(v[2]))
+                end
+                ForkThread(RNGtemporaryrenderbuildsquare,v[2],aiBrain:GetUnitBlueprint(v[1]).Physics.SkirtSizeX,aiBrain:GetUnitBlueprint(v[1]).Physics.SkirtSizeZ)
+            end
+            for _=0,25 do
+                WaitTicks(2)
+            end
         end
     end,
 }

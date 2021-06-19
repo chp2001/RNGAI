@@ -2890,6 +2890,7 @@ AIBrain = Class(RNGAIBrainClass) {
     EcoSelectorManagerRNG = function(self, priorityUnit, units, action, type)
         --LOG('Eco selector manager for '..priorityUnit..' is '..action..' Type is '..type)
         for _,v in units do
+            if v.Dead or not v then continue end
             if v.UnitBeingBuilt or v.UnitBeingAssist then
                 local beingbuilt=v.UnitBeingBuilt or v.UnitBeingAssist
                 local bp=beingbuilt:GetBlueprint()

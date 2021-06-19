@@ -3,6 +3,7 @@ local AIUtils = import('/lua/ai/AIUtilities.lua')
 local BASEPOSTITIONS = {}
 local mapSizeX, mapSizeZ = GetMapSize()
 local GetCurrentUnits = moho.aibrain_methods.GetCurrentUnits
+local GetNumUnitsAroundPoint = moho.aibrain_methods.GetNumUnitsAroundPoint
 
 -- Check if less than num in seconds
 function LessThanGameTimeSecondsRNG(aiBrain, num)
@@ -827,6 +828,95 @@ end
 function LessThanIdleEngineersRNG(aiBrain,num)
     if (table.getn(aiBrain:GetListOfUnits(categories.ENGINEER * categories.MOBILE - categories.COMMAND, true))-aiBrain:GetCurrentUnits(categories.ENGINEER * categories.MOBILE - categories.COMMAND))<num then
         return true
+    end
+    return false
+end
+function PgenCapsToReclaim(aiBrain,cat)
+    local mexes=aiBrain:GetListOfUnits(cat,true)
+    for _,mex in mexes do
+        if GetNumUnitsAroundPoint(aiBrain, categories.ENERGYPRODUCTION * categories.STRUCTURE, mex:GetPosition(), 3, 'Ally')>0 then
+            return true
+        end
+    end
+    return false
+end
+function LessThanPgenCapToReclaimPlatoonNum(aiBrain,num)
+    if not aiBrain.uncapplatoons then return true end
+    if table.getn(aiBrain.uncapplatoons)<num then return true end
+end
+function PgenCapsToReclaimPlatoonRatio(aiBrain)
+    if not aiBrain.uncapplatoons then return true end
+    local mexes=aiBrain:GetListOfUnits(categories.MASSEXTRACTION-categories.TECH1,true)
+    local num=0
+    for _,mex in mexes do
+        if GetNumUnitsAroundPoint(aiBrain, categories.ENERGYPRODUCTION * categories.STRUCTURE, mex:GetPosition(), 3, 'Ally')>0 then
+            num=num+1
+        end
+    end
+    for k,v in aiBrain.uncapplatoons do
+        if not v then table.remove(aiBrain.uncapplatoons,k) end
+    end
+    if table.getn(aiBrain.uncapplatoons)<num then return true end
+    return false
+end
+function MexesToCap(aiBrain,cat)
+    local mexes=aiBrain:GetListOfUnits(cat,true)
+    local whatToBuild='ueb1106'
+    local unitSize = aiBrain:GetUnitBlueprint(whatToBuild).Physics
+    local function normalposition(vec)
+        return {vec[1],GetSurfaceHeight(vec[1],vec[2]),vec[2]}
+    end
+    for _,mex in mexes do
+        if GetNumUnitsAroundPoint(aiBrain, categories.MASSSTORAGE, mex:GetPosition(), 3, 'Ally')<4 then
+            if not mex.Dead then
+                local targetSize = mex:GetBlueprint().Physics
+                local targetPos = mex:GetPosition()
+                local differenceX=math.abs(targetSize.SkirtSizeX-unitSize.SkirtSizeX)
+                local offsetX=math.floor(differenceX/2)
+                local differenceZ=math.abs(targetSize.SkirtSizeZ-unitSize.SkirtSizeZ)
+                local offsetZ=math.floor(differenceZ/2)
+                local offsetfactory=0
+                -- Top/bottom of unit
+                for i=-offsetX,offsetX do
+                    local testPos = { targetPos[1] + (i * 1), targetPos[3]-targetSize.SkirtSizeZ/2-(unitSize.SkirtSizeZ/2)-offsetfactory, 0 }
+                    local testPos2 = { targetPos[1] + (i * 1), targetPos[3]+targetSize.SkirtSizeZ/2+(unitSize.SkirtSizeZ/2)+offsetfactory, 0 }
+                    -- check if the buildplace is to close to the border or inside buildable area
+                    if testPos[1] > 8 and testPos[1] < ScenarioInfo.size[1] - 8 and testPos[2] > 8 and testPos[2] < ScenarioInfo.size[2] - 8 then
+                        --ForkThread(RNGtemporaryrenderbuildsquare,testPos,unitSize.SkirtSizeX,unitSize.SkirtSizeZ)
+                        --table.insert(template[1], testPos)
+                        if aiBrain:CanBuildStructureAt(whatToBuild, normalposition(testPos)) then
+                            return true
+                        end
+                    end
+                    if testPos2[1] > 8 and testPos2[1] < ScenarioInfo.size[1] - 8 and testPos2[2] > 8 and testPos2[2] < ScenarioInfo.size[2] - 8 then
+                        --ForkThread(RNGtemporaryrenderbuildsquare,testPos2,unitSize.SkirtSizeX,unitSize.SkirtSizeZ)
+                        --table.insert(template[1], testPos2)
+                        if aiBrain:CanBuildStructureAt(whatToBuild, normalposition(testPos2)) then
+                            return true
+                        end
+                    end
+                end
+                -- Sides of unit
+                for i=-offsetZ,offsetZ do
+                    local testPos = { targetPos[1]-targetSize.SkirtSizeX/2-(unitSize.SkirtSizeX/2)-offsetfactory, targetPos[3] + (i * 1), 0 }
+                    local testPos2 = { targetPos[1]+targetSize.SkirtSizeX/2+(unitSize.SkirtSizeX/2)+offsetfactory, targetPos[3] + (i * 1), 0 }
+                    if testPos[1] > 8 and testPos[1] < ScenarioInfo.size[1] - 8 and testPos[2] > 8 and testPos[2] < ScenarioInfo.size[2] - 8 then
+                        --ForkThread(RNGtemporaryrenderbuildsquare,testPos,unitSize.SkirtSizeX,unitSize.SkirtSizeZ)
+                        --table.insert(template[1], testPos)
+                        if aiBrain:CanBuildStructureAt(whatToBuild, normalposition(testPos)) then
+                            return true
+                        end
+                    end
+                    if testPos2[1] > 8 and testPos2[1] < ScenarioInfo.size[1] - 8 and testPos2[2] > 8 and testPos2[2] < ScenarioInfo.size[2] - 8 then
+                        --ForkThread(RNGtemporaryrenderbuildsquare,testPos2,unitSize.SkirtSizeX,unitSize.SkirtSizeZ)
+                        --table.insert(template[1], testPos2)
+                        if aiBrain:CanBuildStructureAt(whatToBuild, normalposition(testPos2)) then
+                            return true
+                        end
+                    end
+                end
+            end
+        end
     end
     return false
 end
