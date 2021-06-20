@@ -715,16 +715,18 @@ function EngineerMoveWithSafePathCHP(aiBrain, eng, destination, whatToBuildM)
                         --LOG('We can build on a mass marker within 30')
                         --local massMarker = RUtils.GetClosestMassMarkerToPos(aiBrain, waypointPath)
                         --LOG('Mass Marker'..repr(massMarker))
+                        table.sort(markers,function(a,b) return VDist3Sq(a.Position,eng:GetPosition())<VDist3Sq(b.Position,eng:GetPosition()) end)
                         --LOG('Attempting second mass marker')
                         for _,massMarker in markers do
-                        RUtils.EngineerTryReclaimCaptureArea(aiBrain, eng, massMarker.Position)
-                        EngineerTryRepair(aiBrain, eng, whatToBuildM, massMarker.Position)
-                        aiBrain:BuildStructure(eng, whatToBuildM, {massMarker.Position[1], massMarker.Position[3], 0}, false)
-                        if eng.mexesqueued then
-                            eng.mexesqueued=eng.mexesqueued+1
-                        end
-                        local newEntry = {whatToBuildM, {massMarker.Position[1], massMarker.Position[3], 0}, false}
-                        table.insert(eng.EngineerBuildQueue,k, newEntry)
+                            if not (eng.mexesqueued<5) then break end
+                            RUtils.EngineerTryReclaimCaptureArea(aiBrain, eng, massMarker.Position)
+                            EngineerTryRepair(aiBrain, eng, whatToBuildM, massMarker.Position)
+                            aiBrain:BuildStructure(eng, whatToBuildM, {massMarker.Position[1], massMarker.Position[3], 0}, false)
+                            if eng.mexesqueued then
+                                eng.mexesqueued=eng.mexesqueued+1
+                            end
+                            local newEntry = {whatToBuildM, {massMarker.Position[1], massMarker.Position[3], 0}, false}
+                            table.insert(eng.EngineerBuildQueue,k, newEntry)
                         k=k+1
                         end
                         continue

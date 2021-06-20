@@ -91,12 +91,24 @@ BuilderGroup {
     Builder {
         BuilderName = 'RNGAI T1 Excess Engineer',
         PlatoonTemplate = 'T1BuildEngineer',
-        Priority = 746,
+        Priority = 747,
         BuilderConditions = {
             { UCBC, 'LessThanIdleEngineersRNG', { 1 } },
             { EBC, 'GreaterThanEconEfficiencyRNG', { 0.6, 0.1 }},
-            { EBC, 'GreaterThanEconStorageRatioRNG', { 0.2, 0.5}},
-            { EBC, 'CoinFlipRNG', { 0.6 }},
+            { EBC, 'CoinFlipRNG', { 0.2 }},
+        },
+        BuilderType = 'Land',
+        BuilderData = {
+            TechLevel = 1
+        },
+    },
+    Builder {
+        BuilderName = 'RNGAI T1 First Engineers',
+        PlatoonTemplate = 'T1BuildEngineer',
+        Priority = 748,
+        BuilderConditions = {
+            { EBC, 'GreaterThanEconEfficiencyRNG', { 0.6, 0.1 }},
+            { UCBC, 'HaveLessThanUnitsWithCategory', { 4, categories.ENGINEER }},
         },
         BuilderType = 'Land',
         BuilderData = {

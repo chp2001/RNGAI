@@ -3422,14 +3422,17 @@ function MexUpgradeManagerRNG(aiBrain)
         WaitSeconds(10)
     end
     while not aiBrain.defeat do
-        local mexes = aiBrain:GetListOfUnits(categories.MASSEXTRACTION - categories.TECH3, true, false)
+        local mexes1 = aiBrain:GetListOfUnits(categories.MASSEXTRACTION - categories.TECH3, true, false)
         local time=GetGameTimeSeconds()
         --[[if aiBrain.EcoManagerPowerStateCheck(aiBrain) then
             WaitSeconds(4)
             continue
         end]]
-        for _,v in mexes do
+        local currentupgradecost=0
+        local mexes={}
+        for i,v in mexes1 do
             --if not v.UCost then
+            if v:IsUnitState('Upgrading') and v.UCost then currentupgradecost=currentupgradecost+v.UCost table.remove(mexes,i) continue end
                 local spende=GetConsumptionPerSecondEnergy(v)
                 local producem=GetProductionPerSecondMass(v)
                 local unit=v:GetBlueprint()
@@ -3455,14 +3458,15 @@ function MexUpgradeManagerRNG(aiBrain)
                 v.UAge=time
             end
             v.TAge=1/(1+math.min(120,time-v.UAge)/120)
+            table.insert(mexes,v)
         end
         --[[if 10>aiBrain.cmanager.income.r.m*ratio then
             WaitSeconds(3)
             continue
         end]]
-        if aiBrain.cmanager.categoryspend.mex.T1+aiBrain.cmanager.categoryspend.mex.T2<aiBrain.cmanager.income.r.m*ratio then
-            table.sort(mexes,function(a,b) return (VDist3Sq(a:GetPosition(),homepos)+VDist3Sq(aiBrain.emanager.enemy.Position,a:GetPosition()))*a.UCost*a.UCost*a.TMCost*a.UECost*a.UEmult*a.UEmult*a.TAge/a.UMmult/a.UMmult<(VDist3Sq(b:GetPosition(),homepos)+VDist3Sq(aiBrain.emanager.enemy.Position,b:GetPosition()))*b.UCost*b.UCost*b.TMCost*b.UECost*b.UEmult*b.UEmult*b.TAge/b.UMmult/b.UMmult end)
-            local startval=aiBrain.cmanager.income.r.m*ratio-(aiBrain.cmanager.categoryspend.mex.T1+aiBrain.cmanager.categoryspend.mex.T2)
+        if currentupgradecost<aiBrain.cmanager.income.r.m*ratio then
+            table.sort(mexes,function(a,b) return (1+VDist3Sq(a:GetPosition(),homepos)/ScenarioInfo.size[2]/ScenarioInfo.size[2]/2)*(1-VDist3Sq(aiBrain.emanager.enemy.Position,a:GetPosition())/ScenarioInfo.size[2]/ScenarioInfo.size[2]/2)*a.UCost*a.TMCost*a.UECost*a.UEmult*a.TAge/a.UMmult/a.UMmult<(1+VDist3Sq(b:GetPosition(),homepos)/ScenarioInfo.size[2]/ScenarioInfo.size[2]/2)*(1-VDist3Sq(aiBrain.emanager.enemy.Position,b:GetPosition())/ScenarioInfo.size[2]/ScenarioInfo.size[2]/2)*b.UCost*b.TMCost*b.UECost*b.UEmult*b.TAge/b.UMmult/b.UMmult end)
+            local startval=aiBrain.cmanager.income.r.m*ratio-currentupgradecost
             --local starte=aiBrain.cmanager.income.r.e*1.3-aiBrain.cmanager.spend.e
             for _,v in mexes do
                 if startval>0 then
@@ -3555,7 +3559,7 @@ function DisplayMarkerAdjacency(aiBrain)
     for k,v in aiBrain.RNGAreas do
         LOG(repr(k)..' has '..repr(table.getn(v))..' nodes')
     end
-    ---[[
+    --[[
     while not aiBrain.defeat do
         for _,v in aiBrain.rendercircles do
             DrawCircle(v,5,'FFBF9C1E')
@@ -3595,5 +3599,18 @@ function DoArmySpotDistanceInfect(aiBrain,marker,army)
             --table.insert(aiBrain.renderlines,{marker.position,Scenario.MasterChain._MASTERCHAIN_.Markers[node].position,marker.type})
             DoArmySpotDistanceInfect(aiBrain,Scenario.MasterChain._MASTERCHAIN_.Markers[node],army)
         end
+    end
+end
+function CanGraphToRNGArea(unit, destPos, layer)
+    local position = unit:GetPosition()
+    local startNode = Scenario.MasterChain._MASTERCHAIN_.Markers[AIAttackUtils.GetClosestPathNodeInRadiusByLayer(position,100,layer).name]
+    local endNode = false
+
+    if startNode then
+        endNode = Scenario.MasterChain._MASTERCHAIN_.Markers[AIAttackUtils.GetClosestPathNodeInRadiusByLayer(destPos,100,layer).name]
+    end
+
+    if endNode.RNGArea==startNode.RNGArea then
+        return true, endNode.position
     end
 end

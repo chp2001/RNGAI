@@ -664,7 +664,7 @@ BuilderGroup {
     Builder {
         BuilderName = 'RNG Tech CDR Assist Assist Hydro',
         PlatoonTemplate = 'CommanderAssistRNG',
-        Priority = 960,
+        Priority = 990,
         BuilderConditions = {
             { UCBC, 'HaveGreaterThanUnitsInCategoryBeingBuiltAtLocationRadiusRNG', { 'LocationType', 0,65, categories.STRUCTURE * categories.HYDROCARBON, }},
             { UCBC, 'HaveLessThanUnitsWithCategory', { 1, categories.STRUCTURE * categories.HYDROCARBON }},
