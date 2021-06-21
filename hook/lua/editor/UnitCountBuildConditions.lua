@@ -57,7 +57,6 @@ function CanBuildOnHydroLessThanDistanceRNG(aiBrain, locationType, distance, thr
         if markerTable[1] and VDist3Sq(markerTable[1], {engineerManager.Location[1],GetSurfaceHeight(engineerManager.Location[1],engineerManager.Location[3]),engineerManager.Location[3]}) < distance*distance then
             return true
         end
-    LOG('hydro condition failed due to sorted hydro location being outside range')
     return false
 end
 
@@ -838,7 +837,16 @@ function ArmyManagerBuild(aiBrain, uType, tier, unit)
 
 end
 function LessThanIdleEngineersRNG(aiBrain,num)
-    if (table.getn(aiBrain:GetListOfUnits(categories.ENGINEER * categories.MOBILE - categories.COMMAND, true))-aiBrain:GetCurrentUnits(categories.ENGINEER * categories.MOBILE - categories.COMMAND))<num then
+    local engtable=aiBrain:GetListOfUnits(categories.ENGINEER * categories.MOBILE - categories.COMMAND, false,false)
+    local tablenum=0
+    for _,v in engtable do
+        if v:IsIdleState() then
+            tablenum=tablenum+1
+            if tablenum>=num then return false end
+        end
+    end
+    LOG('eng status is '..repr(table.getn(engtable))..' total and '..repr(tablenum)..' table')
+    if (tablenum<num) then
         return true
     end
     return false

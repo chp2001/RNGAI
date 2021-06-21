@@ -331,9 +331,11 @@ BuilderGroup {
         BuilderName = 'RNGAI T1Engineer Hydro 60',
         PlatoonTemplate = 'EngineerBuilderT123RNG',
         Priority = 999,
+        DelayEqualBuildPlattons = {'HydroBuild', 30},
         InstanceCount = 1,
         BuilderConditions = { 
             { UCBC, 'CanBuildOnHydroLessThanDistanceRNG', { 'LocationType', 65, -1000, 100, 1, 'AntiSurface', 1 }},
+            { UCBC, 'CheckBuildPlatoonDelayRNG', { 'HydroBuild' }},
         },
         BuilderType = 'Any',
         BuilderData = {

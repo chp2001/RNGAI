@@ -2894,6 +2894,7 @@ AIBrain = Class(RNGAIBrainClass) {
             if v.UnitBeingBuilt or v.UnitBeingAssist then
                 local beingbuilt=v.UnitBeingBuilt or v.UnitBeingAssist
                 local bp=beingbuilt:GetBlueprint()
+                if beingbuilt.Dead then continue end
                 local massleft=(1-beingbuilt:GetFractionComplete())*bp.Economy.BuildCostMass
                 if type=='ENERGY' then
                     massleft=(1-beingbuilt:GetFractionComplete())*bp.Economy.BuildCostEnergy

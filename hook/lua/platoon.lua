@@ -6191,6 +6191,7 @@ Platoon = Class(RNGAIPlatoon) {
         LOG('platoon homebase: '..repr(homepos)..' startpos = '..repr({homebasex,homebasey}))
         for _,v in platoonUnits do
             if not v.Dead then
+               aiBrain:AssignUnitsToPlatoon(platoon, v, 'Artillery', 'NoFormation')
                 for _, weapon in v:GetBlueprint().Weapon or {} do
                     if not v.MaxWeaponRange or v.MaxRadius > v.MaxWeaponRange then
                         v.MaxWeaponRange = weapon.MaxRadius * 0.9
@@ -6360,7 +6361,7 @@ Platoon = Class(RNGAIPlatoon) {
                     targetPosition=nil
                 end
             end
-            if not target and not targetacu or targetDist>platoon.MaxWeaponRange*1.5 or (not target and targetacuDist>platoon.MaxWeaponRange*2) or target and not RUtils.CanGraphToRNGArea(AIAttackUtils.GetMostRestrictiveLayer(platoon),targetPosition,self.MovementLayer) then
+            if not target and not targetacu or targetDist>math.max(platoon.MaxWeaponRange,40) or (not target and targetacuDist>platoon.MaxWeaponRange*3) or target and not RUtils.CanGraphToRNGArea(AIAttackUtils.GetMostRestrictiveLayer(platoon),targetPosition,self.MovementLayer) then
                 if platoon.path and VDist3Sq(platoon.path[table.getn(platoon.path)],platoon.Pos)<platoon.MaxWeaponRange then
                     platoon.path=nil
                 end
@@ -6391,7 +6392,7 @@ Platoon = Class(RNGAIPlatoon) {
                             end
                             table.insert(raidlocs,v)
                         end
-                        table.sort(raidlocs,function(k1,k2) return VDist2Sq(k1.Position[1],k1.Position[3],platoon.Pos[1],platoon.Pos[3])*VDist2Sq(k1.Position[1],k1.Position[3],platoon.home[1],platoon.home[3])/VDist2Sq(k1.Position[1],k1.Position[3],platoon.base[1],platoon.base[3])<VDist2Sq(k2.Position[1],k2.Position[3],platoon.Pos[1],platoon.Pos[3])*VDist2Sq(k2.Position[1],k2.Position[3],platoon.home[1],platoon.home[3])/VDist2Sq(k2.Position[1],k2.Position[3],platoon.base[1],platoon.base[3]) end)
+                        table.sort(raidlocs,function(k1,k2) return (VDist3Sq(aiBrain.emanager.enemy.Position,k1.Position)+ScenarioInfo.size[2])*(VDist2Sq(k1.Position[1],k1.Position[3],platoon.Pos[1],platoon.Pos[3])+ScenarioInfo.size[2])*VDist2Sq(k1.Position[1],k1.Position[3],platoon.home[1],platoon.home[3])/VDist2Sq(k1.Position[1],k1.Position[3],platoon.base[1],platoon.base[3])<(VDist3Sq(aiBrain.emanager.enemy.Position,k2.Position)+ScenarioInfo.size[2])*(VDist2Sq(k2.Position[1],k2.Position[3],platoon.Pos[1],platoon.Pos[3])+ScenarioInfo.size[2])*VDist2Sq(k2.Position[1],k2.Position[3],platoon.home[1],platoon.home[3])/VDist2Sq(k2.Position[1],k2.Position[3],platoon.base[1],platoon.base[3]) end)
                         platoon.dest=raidlocs[1].Position
                         if platoon.dest then
                             platoon.dest={platoon.dest[1]+math.random(-4,4),platoon.dest[2],platoon.dest[3]+math.random(-4,4)}
@@ -6468,7 +6469,7 @@ Platoon = Class(RNGAIPlatoon) {
                         table.insert(raidlocs,v)
                     end
                     --LOG('raidlocs='..repr(raidlocs))
-                    table.sort(raidlocs,function(k1,k2) return VDist2Sq(k1.Position[1],k1.Position[3],platoon.Pos[1],platoon.Pos[3])*VDist2Sq(k1.Position[1],k1.Position[3],platoon.home[1],platoon.home[3])/VDist2Sq(k1.Position[1],k1.Position[3],platoon.base[1],platoon.base[3])<VDist2Sq(k2.Position[1],k2.Position[3],platoon.Pos[1],platoon.Pos[3])*VDist2Sq(k2.Position[1],k2.Position[3],platoon.home[1],platoon.home[3])/VDist2Sq(k2.Position[1],k2.Position[3],platoon.base[1],platoon.base[3]) end)
+                    table.sort(raidlocs,function(k1,k2) return (VDist3Sq(aiBrain.emanager.enemy.Position,k1.Position)+ScenarioInfo.size[2])*(VDist2Sq(k1.Position[1],k1.Position[3],platoon.Pos[1],platoon.Pos[3])+ScenarioInfo.size[2])*VDist2Sq(k1.Position[1],k1.Position[3],platoon.home[1],platoon.home[3])/(VDist2Sq(k1.Position[1],k1.Position[3],platoon.base[1],platoon.base[3])+ScenarioInfo.size[2])<(VDist3Sq(aiBrain.emanager.enemy.Position,k2.Position)+ScenarioInfo.size[2])*(VDist2Sq(k2.Position[1],k2.Position[3],platoon.Pos[1],platoon.Pos[3])+ScenarioInfo.size[2])*VDist2Sq(k2.Position[1],k2.Position[3],platoon.home[1],platoon.home[3])/(VDist2Sq(k2.Position[1],k2.Position[3],platoon.base[1],platoon.base[3])+ScenarioInfo.size[2]) end)
                     platoon.dest=raidlocs[1].Position
                     if platoon.dest then
                         platoon.dest={platoon.dest[1]+math.random(-4,4),platoon.dest[2],platoon.dest[3]+math.random(-4,4)}
@@ -7038,7 +7039,7 @@ Platoon = Class(RNGAIPlatoon) {
                 local enemy=self:FindClosestUnit('Attack', 'Enemy', true, categories.ALLUNITS - categories.NAVAL - categories.AIR - categories.WALL)
                 if not enemy or enemy.Dead then
                 else
-                    if RUtils.CanGraphToRNGArea(AIAttackUtils.GetMostRestrictiveLayer(platoon),enemy:GetPosition(),self.MovementLayer) and VDist3Sq(enemy:GetPosition(),self:GetPlatoonPosition())<platoon.MaxWeaponRange*platoon.MaxWeaponRange*3*3 then
+                    if RUtils.CanGraphToRNGArea(AIAttackUtils.GetMostRestrictiveLayer(platoon),enemy:GetPosition(),self.MovementLayer) and VDist3Sq(enemy:GetPosition(),self:GetPlatoonPosition())<math.max(platoon.MaxWeaponRange*platoon.MaxWeaponRange*3,40) then
                         platoon.navigating=false
                         platoon.path=nil
                         WaitTicks(20)
@@ -7371,6 +7372,7 @@ Platoon = Class(RNGAIPlatoon) {
             return
         end
         local assistData = self.PlatoonData.Assist
+        local range=assistData.AssistRange or 100
         local eng = self:GetPlatoonUnits()[1]
         local engineerManager = aiBrain.BuilderManagers[assistData.AssistLocation].EngineerManager
         local target=nil
@@ -7380,7 +7382,7 @@ Platoon = Class(RNGAIPlatoon) {
             return
         end
         for _,cat in assistData.AssistPriority do
-            local units = aiBrain:GetUnitsAroundPoint(cat, engineerManager.Location, assistData.AssistRange, 'Ally')
+            local units = aiBrain:GetUnitsAroundPoint(cat, engineerManager.Location, range, 'Ally')
             local unfinishedunits={}
             for k,v in units do
                 if v.Dead or not v then continue end
@@ -7475,7 +7477,6 @@ Platoon = Class(RNGAIPlatoon) {
                 WaitTicks(2)
                 continue
             end
-            LOG('engineerbuild'..repr(eng.EngineerBuildQueue))
             for i,v in eng.EngineerBuildQueue do
                 if i==1 then
                     ForkThread(eng.PlatoonHandle.EngineerTemporaryLineRender,eng,normalposition(v[2]),'da4CFF00')

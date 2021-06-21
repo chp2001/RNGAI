@@ -3415,6 +3415,7 @@ function StructureUpgradeThreadRNG(unit, aiBrain, upgradeSpec, bypasseco)
 end
 function MexUpgradeManagerRNG(aiBrain)
     aiBrain:ForkThread(DisplayMarkerAdjacency)
+    aiBrain:ForkThread(CommandyBoy)
     local homebasex,homebasey = aiBrain:GetArmyStartPos()
     local homepos = {homebasex,GetTerrainHeight(homebasex,homebasey),homebasey}
     local ratio=0.35
@@ -3475,6 +3476,28 @@ function MexUpgradeManagerRNG(aiBrain)
                 else
                     break
                 end
+            end
+        end
+        WaitSeconds(4)
+    end
+end
+function CommandyBoy(aiBrain)
+    local commandyboy=aiBrain:GetListOfUnits(categories.COMMAND, false, false)
+    local paused=false
+    local GetEconomyStoredRatio = moho.aibrain_methods.GetEconomyStoredRatio
+    while not aiBrain.defeat do
+        if GetEconomyStoredRatio(aiBrain, 'ENERGY')<0.2 then
+            if not paused then
+                for _,v in commandyboy do
+                    if v:IsUnitState('Enhancing') then
+                        v:SetPaused(true)
+                        paused=true
+                    end
+                end
+            end
+        elseif paused then
+            for _,v in commandyboy do
+                v:SetPaused(false)
             end
         end
         WaitSeconds(4)
