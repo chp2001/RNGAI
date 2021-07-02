@@ -38,7 +38,7 @@ AIBrain = Class(RNGAIBrainClass) {
         end
     end,
 
-    OnSpawnPreBuiltUnits = function(self)
+    --[[OnSpawnPreBuiltUnits = function(self)
         if not self.RNG then
             return RNGAIBrainClass.OnSpawnPreBuiltUnits(self)
         end
@@ -97,7 +97,7 @@ AIBrain = Class(RNGAIBrainClass) {
         end
 
         self.PreBuilt = true
-    end,
+    end,]]
 
     InitializeSkirmishSystems = function(self)
         self:ForkThread(RUtils.DisplayEconomyRNG)

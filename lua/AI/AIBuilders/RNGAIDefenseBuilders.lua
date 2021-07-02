@@ -268,7 +268,7 @@ BuilderGroup {
                 AdjacencyCategory = (categories.ENERGYPRODUCTION * categories.TECH3 + categories.TECH2) + (categories.STRUCTURE * categories.FACTORY),
                 AdjacencyPriority = {
                     categories.FACTORY * categories.STRUCTURE * categories.LAND - categories.TECH1 - categories.SUPPORTFACTORY,
-                    categories.ENERGYPRODUCTION * categories.TECH3 + categories.TECH2,
+                    categories.ENERGYPRODUCTION * (categories.TECH3 + categories.TECH2),
                     categories.MASSEXTRACTION - categories.TECH1,
                 },
                 AdjacencyBias = 'ForwardClose',

@@ -3794,7 +3794,7 @@ function DisplayMarkerAdjacency(aiBrain)
     for k,v in aiBrain.RNGAreas do
         LOG(repr(k)..' has '..repr(table.getn(v))..' nodes')
     end
-    ---[[
+    --[[
     LOG('renderlines has '..table.getn(aiBrain.renderlines))
     LOG('bestarmy has '..repr(bestarmynum))
     --LOG('renderlines are '..repr(aiBrain.renderlines))
@@ -3808,7 +3808,7 @@ function DisplayMarkerAdjacency(aiBrain)
                 if v[5] then
                     prefix='aa'
                 end
-                DrawLine(v[1],v[2],prefix..colors[v[4]])
+                DrawLine(v[1],v[2],prefix..colors[(v[4])])
             else
                 if v[3]=='Land Path Node' then
                     DrawLine(v[1],v[2],'FFBF9C1E')
