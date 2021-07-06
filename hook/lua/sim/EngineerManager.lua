@@ -1,11 +1,11 @@
-local RUtils = import('/mods/RNGAI/lua/AI/RNGUtilities.lua')
+local RUtils = import('/mods/TechAI/lua/AI/RNGUtilities.lua')
 
-RNGEngineerManager = EngineerManager
-EngineerManager = Class(RNGEngineerManager) {
+TechAIEngineerManager = EngineerManager
+EngineerManager = Class(TechAIEngineerManager) {
 
     UnitConstructionFinished = function(self, unit, finishedUnit)
-        if not self.Brain.RNG then
-            return RNGEngineerManager.UnitConstructionFinished(self, unit, finishedUnit)
+        if not self.Brain.TechAI then
+            return TechAIEngineerManager.UnitConstructionFinished(self, unit, finishedUnit)
         end
         if EntityCategoryContains(categories.FACTORY * categories.STRUCTURE, finishedUnit) and finishedUnit:GetAIBrain():GetArmyIndex() == self.Brain:GetArmyIndex() then
             self.Brain.BuilderManagers[self.LocationType].FactoryManager:AddFactory(finishedUnit)
@@ -16,14 +16,14 @@ EngineerManager = Class(RNGEngineerManager) {
             end
             local unitBp = finishedUnit:GetBlueprint()
             local StructurePool = self.Brain.StructurePool
-            --LOG('* AI-RNG: Assigning built extractor to StructurePool')
+            --LOG('* AI-TechAI: Assigning built extractor to StructurePool')
             self.Brain:AssignUnitsToPlatoon(StructurePool, {finishedUnit}, 'Support', 'none' )
             --Debug log
             local platoonUnits = StructurePool:GetPlatoonUnits()
-            --LOG('* AI-RNG: StructurePool now has :'..table.getn(platoonUnits))
+            --LOG('* AI-TechAI: StructurePool now has :'..table.getn(platoonUnits))
             local upgradeID = unitBp.General.UpgradesTo or false
 			if upgradeID and unitBp then
-				--LOG('* AI-RNG: UpgradeID')
+				--LOG('* AI-TechAI: UpgradeID')
 				RUtils.StructureUpgradeInitialize(finishedUnit, self.Brain)
             end
         end
@@ -44,17 +44,17 @@ EngineerManager = Class(RNGEngineerManager) {
     end,
 
     ManagerLoopBody = function(self,builder,bType)
-        if not self.Brain.RNG then
-            return RNGEngineerManager.ManagerLoopBody(self,builder,bType)
+        if not self.Brain.TechAI then
+            return TechAIEngineerManager.ManagerLoopBody(self,builder,bType)
         end
         BuilderManager.ManagerLoopBody(self,builder,bType)
     end,
 
     AssignEngineerTask = function(self, unit)
-        if not self.Brain.RNG then
-            return RNGEngineerManager.AssignEngineerTask(self, unit)
+        if not self.Brain.TechAI then
+            return TechAIEngineerManager.AssignEngineerTask(self, unit)
         end
-        if unit.Combat or unit.GoingHome or unit.UnitBeingBuiltBehavior or unit.Upgrading then
+        if unit.Combat or unit.GoingHome or unit.UnitBeingBuiltBehavior or unit.Upgrading or (unit.EngineerBuildQueue and table.getn(unit.EngineerBuildQueue)>0) then
             if unit.Upgrading then
                 --LOG('Unit Is upgrading, applying 5 second delay')
             end
@@ -158,8 +158,8 @@ EngineerManager = Class(RNGEngineerManager) {
     end,
 
     RemoveUnit = function(self, unit)
-        if not self.Brain.RNG then
-            return RNGEngineerManager.RemoveUnit(self, unit)
+        if not self.Brain.TechAI then
+            return TechAIEngineerManager.RemoveUnit(self, unit)
         end
         local guards = unit:GetGuards()
         for k,v in guards do
@@ -195,16 +195,16 @@ EngineerManager = Class(RNGEngineerManager) {
 
     LowMass = function(self)
         -- We have a seperate eco manager, this also uses storage for mass where as we use trend.
-        if not self.Brain.RNG then
-            return RNGEngineerManager.LowMass(self)
+        if not self.Brain.TechAI then
+            return TechAIEngineerManager.LowMass(self)
         end
         LOG('LowMass Condition detected by default eco manager')
     end,
 
     LowEnergy = function(self)
         -- We have a seperate eco manager, this also uses storage for mass where as we use something else.
-        if not self.Brain.RNG then
-            return RNGEngineerManager.LowEnergy(self)
+        if not self.Brain.TechAI then
+            return TechAIEngineerManager.LowEnergy(self)
         end
         LOG('LowEnergy Condition detected by default eco manager')
     end,

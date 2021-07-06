@@ -1,5 +1,5 @@
 --[[
-    File    :   /lua/AI/AIBaseTemplates/RNGAIEconomicBuilders.lua
+    File    :   /lua/AI/AIBaseTemplates/TechAIEconomicBuilders.lua
     Author  :   relentless
     Summary :
         Factory Builders
@@ -32,10 +32,10 @@ local ActiveExpansion = function(self, aiBrain, builderManager)
 end
 
 BuilderGroup {
-    BuilderGroupName = 'RNG Tech Factory Builder Land',                               -- BuilderGroupName, initalized from AIBaseTemplates in "\lua\AI\AIBaseTemplates\"
+    BuilderGroupName = 'TechAI Factory Builder Land',                               -- BuilderGroupName, initalized from AIBaseTemplates in "\lua\AI\AIBaseTemplates\"
     BuildersType = 'EngineerBuilder',
     Builder {
-        BuilderName = 'RNG Tech Factory Builder Land T1 MainBase',
+        BuilderName = 'TechAI Factory Builder Land T1 MainBase',
         PlatoonTemplate = 'EngineerBuilderRNG',
         Priority = 1010,
         DelayEqualBuildPlattons = {'Factories', 3},
@@ -73,7 +73,7 @@ BuilderGroup {
         }
     },
     Builder {
-        BuilderName = 'RNG Tech Factory Builder Land T1 Scaler',
+        BuilderName = 'TechAI Factory Builder Land T1 Scaler',
         PlatoonTemplate = 'EngineerBuilderRNG',
         Priority = 900,
         DelayEqualBuildPlattons = {'Factories', 3},
@@ -109,7 +109,7 @@ BuilderGroup {
         }
     },
     Builder {
-        BuilderName = 'RNG Tech Factory Builder Land T1 Heavy Scaler',
+        BuilderName = 'TechAI Factory Builder Land T1 Heavy Scaler',
         PlatoonTemplate = 'EngineerBuilderRNG',
         Priority = 941,
         DelayEqualBuildPlattons = {'Factories', 3},
@@ -146,7 +146,7 @@ BuilderGroup {
         }
     },
     Builder {
-        BuilderName = 'RNG Tech Factory Builder Land T2 MainBase',
+        BuilderName = 'TechAI Factory Builder Land T2 MainBase',
         PlatoonTemplate = 'EngineerBuilderT23RNG',
         Priority = 1000,
         DelayEqualBuildPlattons = {'Factories', 3},
@@ -180,7 +180,7 @@ BuilderGroup {
         }
     },
     Builder {
-        BuilderName = 'RNG Tech Factory Builder Land T2 Scaler',
+        BuilderName = 'TechAI Factory Builder Land T2 Scaler',
         PlatoonTemplate = 'EngineerBuilderT23RNG',
         Priority = 1000,
         DelayEqualBuildPlattons = {'Factories', 10},
@@ -215,7 +215,7 @@ BuilderGroup {
         }
     },
     Builder {
-        BuilderName = 'RNG Tech Factory Builder Land T3 MainBase',
+        BuilderName = 'TechAI Factory Builder Land T3 MainBase',
         PlatoonTemplate = 'T3EngineerBuilderRNG',
         Priority = 1000,
         DelayEqualBuildPlattons = {'Factories', 10},
@@ -245,7 +245,7 @@ BuilderGroup {
         }
     },
     Builder {
-        BuilderName = 'RNG Tech Factory Builder Land T3 Heavy Scaler',
+        BuilderName = 'TechAI Factory Builder Land T3 Heavy Scaler',
         PlatoonTemplate = 'T3EngineerBuilderRNG',
         Priority = 1002,
         DelayEqualBuildPlattons = {'Factories', 10},
@@ -275,7 +275,7 @@ BuilderGroup {
         }
     },
     Builder {
-        BuilderName = 'RNG Tech Engineer Unfinished Support Factory',
+        BuilderName = 'TechAI Engineer Unfinished Support Factory',
         PlatoonTemplate = 'T123EngineerAssistRNG',
         Priority = 1010,
         DelayEqualBuildPlattons = {'EngineerAssistUnfinished', 1},
@@ -300,7 +300,7 @@ BuilderGroup {
         BuilderType = 'Any',
     },
     Builder {
-        BuilderName = 'RNG Tech Engineer Unfinished Support Factory Lategame',
+        BuilderName = 'TechAI Engineer Unfinished Support Factory Lategame',
         PlatoonTemplate = 'T123EngineerAssistRNG',
         Priority = 1010,
         DelayEqualBuildPlattons = {'EngineerAssistUnfinished', 1},
@@ -326,8 +326,8 @@ BuilderGroup {
         BuilderType = 'Any',
     },
     Builder {
-        BuilderName = 'RNG Tech Engineer Early Assist Factory',
-        PlatoonTemplate = 'T1EngineerFinishRNGTech',
+        BuilderName = 'TechAI Engineer Early Assist Factory',
+        PlatoonTemplate = 'T1EngineerFinishTechAI',
         Priority = 1012,
         DelayEqualBuildPlattons = {'EngineerAssistUnfinishedF', 15},
         InstanceCount = 3,
@@ -356,8 +356,8 @@ BuilderGroup {
         BuilderType = 'Any',
     },
     Builder {
-        BuilderName = 'RNG Tech Engineer Mass Assist Factory',
-        PlatoonTemplate = 'T1EngineerFinishRNGTech',
+        BuilderName = 'TechAI Engineer Mass Assist Factory',
+        PlatoonTemplate = 'T1EngineerFinishTechAI',
         Priority = 1013,
         DelayEqualBuildPlattons = {'EngineerAssistUnfinishedM', 1},
         InstanceCount = 15,
@@ -388,8 +388,8 @@ BuilderGroup {
         BuilderType = 'Any',
     },
     Builder {
-        BuilderName = 'RNG Tech Engineer Early Unfinished Factory',
-        PlatoonTemplate = 'T1EngineerFinishRNGTech',
+        BuilderName = 'TechAI Engineer Early Unfinished Factory',
+        PlatoonTemplate = 'T1EngineerFinishTechAI',
         Priority = 1015,
         DelayEqualBuildPlattons = {'EngineerAssistUnfinishedF', 5},
         InstanceCount = 3,
@@ -420,8 +420,8 @@ BuilderGroup {
         BuilderType = 'Any',
     },
     Builder {
-        BuilderName = 'RNG Tech Engineer Early Unfinished T1 Air',
-        PlatoonTemplate = 'T1EngineerFinishRNGTech',
+        BuilderName = 'TechAI Engineer Early Unfinished T1 Air',
+        PlatoonTemplate = 'T1EngineerFinishTechAI',
         Priority = 1011,
         DelayEqualBuildPlattons = {'EngineerAssistUnfinishedAir', 20},
         InstanceCount = 3,
@@ -448,7 +448,7 @@ BuilderGroup {
         BuilderType = 'Any',
     },
     Builder {
-        BuilderName = 'RNG Tech Engineer Unfinished Structures',
+        BuilderName = 'TechAI Engineer Unfinished Structures',
         PlatoonTemplate = 'T1EngineerFinishRNG',
         Priority = 650,
         DelayEqualBuildPlattons = {'EngineerAssistUnfinished', 1},
@@ -471,7 +471,7 @@ BuilderGroup {
         BuilderType = 'Any',
     },
     Builder {
-        BuilderName = 'RNG Tech Factory Builder Air T1 Air Scaling',
+        BuilderName = 'TechAI Factory Builder Air T1 Air Scaling',
         PlatoonTemplate = 'EngineerBuilderT123RNG',
         Priority = 1003,
         DelayEqualBuildPlattons = {'FactoriesA', 15},
@@ -509,10 +509,10 @@ BuilderGroup {
     },
 }
 BuilderGroup {
-    BuilderGroupName = 'RNG Tech Air Staging Platform',
+    BuilderGroupName = 'TechAI Air Staging Platform',
     BuildersType = 'EngineerBuilder',
     Builder {
-        BuilderName = 'RNG Tech Air Staging 1',
+        BuilderName = 'TechAI Air Staging 1',
         PlatoonTemplate = 'EngineerBuilderT123RNG', -- Air Staging has been moved to T1 so don't need T2 engineers now.
         Priority = 900,
         InstanceCount = 1,
@@ -546,10 +546,10 @@ BuilderGroup {
     },
 }
 BuilderGroup {
-    BuilderGroupName = 'RNG Tech Land Upgrade Builders',
+    BuilderGroupName = 'TechAI Land Upgrade Builders',
     BuildersType = 'PlatoonFormBuilder',
     Builder {
-        BuilderName = 'RNG Tech T1 Land Factory Upgrade HQ',
+        BuilderName = 'TechAI T1 Land Factory Upgrade HQ',
         PlatoonTemplate = 'T1LandFactoryUpgrade',
         Priority = 800,
         InstanceCount = 1,
@@ -564,7 +564,7 @@ BuilderGroup {
         BuilderType = 'Any',
     },
     Builder {
-        BuilderName = 'RNG Tech T1 Land Factory Upgrade HQ Enemy',
+        BuilderName = 'TechAI T1 Land Factory Upgrade HQ Enemy',
         PlatoonTemplate = 'T1LandFactoryUpgrade',
         Priority = 800,
         InstanceCount = 1,
@@ -580,7 +580,7 @@ BuilderGroup {
         BuilderType = 'Any',
     },
     Builder {
-        BuilderName = 'RNG Tech T1 Land Factory Upgrade HQ Excess',
+        BuilderName = 'TechAI T1 Land Factory Upgrade HQ Excess',
         PlatoonTemplate = 'T1LandFactoryUpgrade',
         Priority = 800,
         InstanceCount = 1,
@@ -594,7 +594,7 @@ BuilderGroup {
         BuilderType = 'Any',
     },
     Builder {
-        BuilderName = 'RNG Tech T2 Land Factory Upgrade HQ',
+        BuilderName = 'TechAI T2 Land Factory Upgrade HQ',
         PlatoonTemplate = 'T2LandFactoryUpgrade',
         Priority = 850,
         InstanceCount = 1,
@@ -610,7 +610,7 @@ BuilderGroup {
         BuilderType = 'Any',
     },
     Builder {
-        BuilderName = 'RNG Tech T2 Land Factory Upgrade HQ Enemy',
+        BuilderName = 'TechAI T2 Land Factory Upgrade HQ Enemy',
         PlatoonTemplate = 'T2LandFactoryUpgrade',
         Priority = 850,
         InstanceCount = 1,
@@ -627,7 +627,7 @@ BuilderGroup {
         BuilderType = 'Any',
     },
     Builder {
-        BuilderName = 'RNG Tech T2 Land Factory Upgrade HQ Excess',
+        BuilderName = 'TechAI T2 Land Factory Upgrade HQ Excess',
         PlatoonTemplate = 'T2LandFactoryUpgrade',
         Priority = 800,
         InstanceCount = 1,
@@ -643,10 +643,10 @@ BuilderGroup {
     },
 }
 BuilderGroup {
-    BuilderGroupName = 'RNG Tech Land Support Upgrade Builders',
+    BuilderGroupName = 'TechAI Land Support Upgrade Builders',
     BuildersType = 'PlatoonFormBuilder',
     Builder {
-        BuilderName = 'RNG Tech T1 Land Factory Upgrade Support',
+        BuilderName = 'TechAI T1 Land Factory Upgrade Support',
         PlatoonTemplate = 'T1LandFactoryUpgrade',
         Priority = 650,
         InstanceCount = 3,
@@ -665,7 +665,7 @@ BuilderGroup {
         BuilderType = 'Any',
     },
     Builder {
-        BuilderName = 'RNG Tech T1 Land Factory Upgrade Support Excess',
+        BuilderName = 'TechAI T1 Land Factory Upgrade Support Excess',
         PlatoonTemplate = 'T1LandFactoryUpgrade',
         Priority = 650,
         InstanceCount = 3,
@@ -684,7 +684,7 @@ BuilderGroup {
         BuilderType = 'Any',
     },
     Builder { 
-        BuilderName = 'RNG Tech T2 Land Factory Upgrade Support UEF',
+        BuilderName = 'TechAI T2 Land Factory Upgrade Support UEF',
         PlatoonTemplate = 'T2LandSupFactoryUpgrade1',
         Priority = 700,
         DelayEqualBuildPlattons = {'FactoryUpgrade', 3},
@@ -701,7 +701,7 @@ BuilderGroup {
         BuilderType = 'Any',
     },
     Builder { 
-        BuilderName = 'RNG Tech T2 Land Factory Upgrade Support AEON',
+        BuilderName = 'TechAI T2 Land Factory Upgrade Support AEON',
         PlatoonTemplate = 'T2LandSupFactoryUpgrade2',
         Priority = 700,
         DelayEqualBuildPlattons = {'FactoryUpgrade', 3},
@@ -718,7 +718,7 @@ BuilderGroup {
         BuilderType = 'Any',
     },
     Builder { 
-        BuilderName = 'RNG Tech T2 Land Factory Upgrade Support Cybran',
+        BuilderName = 'TechAI T2 Land Factory Upgrade Support Cybran',
         PlatoonTemplate = 'T2LandSupFactoryUpgrade3',
         Priority = 700,
         DelayEqualBuildPlattons = {'FactoryUpgrade', 3},
@@ -734,7 +734,7 @@ BuilderGroup {
         },
         BuilderType = 'Any',
     },
-    Builder { BuilderName = 'RNG Tech T2 Land Factory Upgrade Support Sera',
+    Builder { BuilderName = 'TechAI T2 Land Factory Upgrade Support Sera',
         PlatoonTemplate = 'T2LandSupFactoryUpgrade4',
         Priority = 700,
         DelayEqualBuildPlattons = {'FactoryUpgrade', 3},
@@ -752,10 +752,10 @@ BuilderGroup {
     },
 }
 BuilderGroup {
-    BuilderGroupName = 'RNG Tech Land Factory Reclaimer',                               -- BuilderGroupName, initalized from AIBaseTemplates in "\lua\AI\AIBaseTemplates\"
+    BuilderGroupName = 'TechAI Land Factory Reclaimer',                               -- BuilderGroupName, initalized from AIBaseTemplates in "\lua\AI\AIBaseTemplates\"
     BuildersType = 'EngineerBuilder',
     Builder {
-        BuilderName = 'RNGAI T1 Engineer Reclaim T1 Land',
+        BuilderName = 'TechAI T1 Engineer Reclaim T1 Land',
         PlatoonTemplate = 'EngineerBuilderRNG',
         PlatoonAIPlan = 'ReclaimStructuresRNG',
         Priority = 950,
@@ -775,7 +775,7 @@ BuilderGroup {
         BuilderType = 'Any',
     },
     Builder {
-        BuilderName = 'RNGAI T1 Engineer Reclaim T1 Land Mass Stall',
+        BuilderName = 'TechAI T1 Engineer Reclaim T1 Land Mass Stall',
         PlatoonTemplate = 'EngineerBuilderRNG',
         PlatoonAIPlan = 'ReclaimStructuresRNG',
         Priority = 1050,
@@ -795,7 +795,7 @@ BuilderGroup {
         BuilderType = 'Any',
     },
     Builder {
-        BuilderName = 'RNGAI T1 Engineer Reclaim T2 Land',
+        BuilderName = 'TechAI T1 Engineer Reclaim T2 Land',
         PlatoonTemplate = 'EngineerBuilderRNG',
         PlatoonAIPlan = 'ReclaimStructuresRNG',
         Priority = 940,
@@ -815,7 +815,7 @@ BuilderGroup {
         BuilderType = 'Any',
     },
     Builder {
-        BuilderName = 'RNGAI T1 Engineer Reclaim T2 Land Mass Stall',
+        BuilderName = 'TechAI T1 Engineer Reclaim T2 Land Mass Stall',
         PlatoonTemplate = 'EngineerBuilderRNG',
         PlatoonAIPlan = 'ReclaimStructuresRNG',
         Priority = 1050,
@@ -834,7 +834,7 @@ BuilderGroup {
         BuilderType = 'Any',
     },
     Builder {
-        BuilderName = 'RNG Tech T1 Engineer Uncap Platoon',
+        BuilderName = 'TechAI T1 Engineer Uncap Platoon',
         PlatoonTemplate = 'EngineerBuilderRNG',
         PlatoonAIPlan = 'ReclaimStructuresRNG',
         DelayEqualBuildPlattons = {'UnCap', 12},
@@ -854,7 +854,7 @@ BuilderGroup {
         BuilderType = 'Any',
     },
     Builder {
-        BuilderName = 'RNG Tech T1 Engineer Uncap Platoon T3',
+        BuilderName = 'TechAI T1 Engineer Uncap Platoon T3',
         PlatoonTemplate = 'EngineerBuilderT123RNG',
         PlatoonAIPlan = 'ReclaimStructuresRNG',
         DelayEqualBuildPlattons = {'UnCap', 12},
@@ -873,7 +873,7 @@ BuilderGroup {
         BuilderType = 'Any',
     },
     Builder {
-        BuilderName = 'RNG Tech Mex Cap Engineer',
+        BuilderName = 'TechAI Mex Cap Engineer',
         PlatoonTemplate = 'EngineerBuilderT123RNG',
         Priority = 900,
         DelayEqualBuildPlattons = {'MassStorage', 2},
@@ -911,7 +911,7 @@ BuilderGroup {
         }
     },
     Builder {
-        BuilderName = 'RNG Tech Engineer Mex Finish Or Assist',
+        BuilderName = 'TechAI Engineer Mex Finish Or Assist',
         PlatoonTemplate = 'T123EngineerAssistRNG',
         PlatoonAIPlan = 'FinishStructurePriorityAIRNG',
         Priority = 1010,
@@ -944,10 +944,10 @@ BuilderGroup {
     },
 }
 BuilderGroup {
-    BuilderGroupName = 'RNG Tech Energy Builder',
+    BuilderGroupName = 'TechAI Energy Builder',
     BuildersType = 'EngineerBuilder',
     Builder {
-        BuilderName = 'RNG Tech T1Engineer Hydro',
+        BuilderName = 'TechAI T1Engineer Hydro',
         PlatoonTemplate = 'EngineerBuilderRNG',
         Priority = 998,
         DelayEqualBuildPlattons = {'HydroBuild', 10},
@@ -971,7 +971,7 @@ BuilderGroup {
 
     },
     Builder {
-        BuilderName = 'RNG Tech T1Engineer Pgen Trend',
+        BuilderName = 'TechAI T1Engineer Pgen Trend',
         PlatoonTemplate = 'EngineerBuilderRNG',
         Priority = 1011,
         InstanceCount = 2,
@@ -1017,7 +1017,7 @@ BuilderGroup {
         }
     },
     Builder {
-        BuilderName = 'RNG Tech T1Engineer Pgen Trend Preparation',
+        BuilderName = 'TechAI T1Engineer Pgen Trend Preparation',
         PlatoonTemplate = 'EngineerBuilderRNG',
         Priority = 994,
         InstanceCount = 5,
@@ -1065,7 +1065,7 @@ BuilderGroup {
         }
     },
     Builder {
-        BuilderName = 'RNG Tech T1Engineer Pgen Mega Preparation',
+        BuilderName = 'TechAI T1Engineer Pgen Mega Preparation',
         PlatoonTemplate = 'EngineerBuilderT123RNG',
         Priority = 997,
         InstanceCount = 10,
@@ -1116,7 +1116,7 @@ BuilderGroup {
         }
     },
     Builder {
-        BuilderName = 'RNG Tech T2 Power Engineer',
+        BuilderName = 'TechAI T2 Power Engineer',
         PlatoonTemplate = 'EngineerBuilderT23RNG',
         Priority = 1000,
         InstanceCount = 1,
@@ -1160,7 +1160,7 @@ BuilderGroup {
         }
     },
     Builder {
-        BuilderName = 'RNG Tech T3 Power Engineer',
+        BuilderName = 'TechAI T3 Power Engineer',
         PlatoonTemplate = 'T3EngineerBuilderRNG',
         Priority = 900,
         InstanceCount = 1,
@@ -1203,11 +1203,11 @@ BuilderGroup {
     },
 }
 BuilderGroup {
-    BuilderGroupName = 'RNG Tech Energy Assist',
+    BuilderGroupName = 'TechAI Energy Assist',
     BuildersType = 'EngineerBuilder',
     Builder {
-        BuilderName = 'RNG Tech T1 Engineer Hydro Assist',
-        PlatoonTemplate = 'T1EngineerFinishRNGTech',
+        BuilderName = 'TechAI T1 Engineer Hydro Assist',
+        PlatoonTemplate = 'T1EngineerFinishTechAI',
         Priority = 1050,
         DelayEqualBuildPlattons = {'EngineerAssistPgen1', 4},
         InstanceCount = 5,
@@ -1233,8 +1233,8 @@ BuilderGroup {
         BuilderType = 'Any',
     },
     Builder {
-        BuilderName = 'RNG Tech T1 Engineer PGEN Assist',
-        PlatoonTemplate = 'T1EngineerFinishRNGTech',
+        BuilderName = 'TechAI T1 Engineer PGEN Assist',
+        PlatoonTemplate = 'T1EngineerFinishTechAI',
         Priority = 1001,
         DelayEqualBuildPlattons = {'EngineerAssistPgen1', 4},
         InstanceCount = 4,
@@ -1265,8 +1265,8 @@ BuilderGroup {
         BuilderType = 'Any',
     },
     Builder {
-        BuilderName = 'RNG Tech T1 Engineer PGEN Assist Stall',
-        PlatoonTemplate = 'T1EngineerFinishRNGTech',
+        BuilderName = 'TechAI T1 Engineer PGEN Assist Stall',
+        PlatoonTemplate = 'T1EngineerFinishTechAI',
         Priority = 1050,
         DelayEqualBuildPlattons = {'EngineerAssistPgenS', 15},
         InstanceCount = 5,
@@ -1294,7 +1294,7 @@ BuilderGroup {
         BuilderType = 'Any',
     },
     Builder {
-        BuilderName = 'RNG Tech T2 Power Assist',
+        BuilderName = 'TechAI T2 Power Assist',
         PlatoonTemplate = 'EngineerBuilderT23RNG',
         PlatoonAIPlan = 'FinishStructurePriorityAIRNG',
         Priority = 999,
@@ -1325,7 +1325,7 @@ BuilderGroup {
         }
     },
     Builder {
-        BuilderName = 'RNG Tech T123 Engineer Unfinished PGEN Midgame',
+        BuilderName = 'TechAI T123 Engineer Unfinished PGEN Midgame',
         PlatoonTemplate = 'T123EngineerAssistRNG',
         PlatoonAIPlan = 'FinishStructurePriorityAIRNG',
         Priority = 1001,
@@ -1356,7 +1356,7 @@ BuilderGroup {
         }
     },
     Builder {
-        BuilderName = 'RNG Tech T123 Engineer Unfinished PGEN Lategame',
+        BuilderName = 'TechAI T123 Engineer Unfinished PGEN Lategame',
         PlatoonTemplate = 'T123EngineerAssistRNG',
         PlatoonAIPlan = 'FinishStructurePriorityAIRNG',
         Priority = 950,

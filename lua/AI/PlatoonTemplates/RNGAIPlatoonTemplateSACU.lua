@@ -1,6 +1,6 @@
 
 PlatoonTemplate {
-    Name = 'RNGAI SACU RAMBO preset 12345',
+    Name = 'TechAI SACU RAMBO preset 12345',
     FactionSquads = {
         UEF = {
             { categories.PRAMBO, 1, 1, 'Attack', 'None' }
@@ -20,7 +20,7 @@ PlatoonTemplate {
     }
 }
 PlatoonTemplate {
-    Name = 'RNGAI SACU ENGINEER preset 12345',
+    Name = 'TechAI SACU ENGINEER preset 12345',
     FactionSquads = {
         UEF = {
             { categories.PENGINEER, 1, 1, 'Attack', 'None' }
@@ -40,7 +40,7 @@ PlatoonTemplate {
     }
 }
 PlatoonTemplate {
-    Name = 'RNGAI SACU RAS',
+    Name = 'TechAI SACU RAS',
     FactionSquads = {
         UEF = {
             { categories.PRAS, 1, 1, 'Attack', 'None' }
@@ -57,7 +57,7 @@ PlatoonTemplate {
     }
 }
 PlatoonTemplate {
-    Name = 'RNGAI SACU COMBAT preset 1x34x',
+    Name = 'TechAI SACU COMBAT preset 1x34x',
     FactionSquads = {
         UEF = {
             { categories.PCOMBAT, 1, 1, 'Attack', 'None' }
@@ -71,7 +71,7 @@ PlatoonTemplate {
     }
 }
 PlatoonTemplate {
-    Name = 'RNGAI SACU NANOCOMBAT preset x2x4x',
+    Name = 'TechAI SACU NANOCOMBAT preset x2x4x',
     FactionSquads = {
         Aeon = {
             { categories.PNANOCOMBAT, 1, 1, 'Attack', 'None' }
@@ -82,7 +82,7 @@ PlatoonTemplate {
     }
 }
 PlatoonTemplate {
-    Name = 'RNGAI SACU BUBBLESHIELD preset 1xxxx',
+    Name = 'TechAI SACU BUBBLESHIELD preset 1xxxx',
     FactionSquads = {
         UEF = {
             { categories.PFASTCOMBAT, 1, 1, 'Attack', 'None' }
@@ -90,7 +90,7 @@ PlatoonTemplate {
     }
 }
 PlatoonTemplate {
-    Name = 'RNGAI SACU INTELJAMMER preset 1xxxx',
+    Name = 'TechAI SACU INTELJAMMER preset 1xxxx',
     FactionSquads = {
         UEF = {
             { categories.PINTELJAMMER, 1, 1, 'Attack', 'None' }
@@ -98,7 +98,7 @@ PlatoonTemplate {
     }
 }
 PlatoonTemplate {
-    Name = 'RNGAI SACU SIMPLECOMBAT preset x2xxx',
+    Name = 'TechAI SACU SIMPLECOMBAT preset x2xxx',
     FactionSquads = {
         Aeon = {
             { categories.PSIMPLECOMBAT, 1, 1, 'Attack', 'None' }
@@ -106,7 +106,7 @@ PlatoonTemplate {
     }
 }
 PlatoonTemplate {
-    Name = 'RNGAI SACU SHIELDCOMBAT preset x2xxx',
+    Name = 'TechAI SACU SHIELDCOMBAT preset x2xxx',
     FactionSquads = {
         Aeon = {
             { categories.PSHIELDCOMBAT, 1, 1, 'Attack', 'None' }
@@ -114,7 +114,7 @@ PlatoonTemplate {
     }
 }
 PlatoonTemplate {
-    Name = 'RNGAI SACU ANTIAIR preset xx3xx',
+    Name = 'TechAI SACU ANTIAIR preset xx3xx',
     FactionSquads = {
         Cybran = {
             { categories.PANTIAIR, 1, 1, 'Attack', 'None' }
@@ -122,7 +122,7 @@ PlatoonTemplate {
     }
 }
 PlatoonTemplate {
-    Name = 'RNGAI SACU STEALTH preset xx3xx',
+    Name = 'TechAI SACU STEALTH preset xx3xx',
     FactionSquads = {
         Cybran = {
             { categories.PSTEALTH, 1, 1, 'Attack', 'None' }
@@ -130,7 +130,7 @@ PlatoonTemplate {
     }
 }
 PlatoonTemplate {
-    Name = 'RNGAI SACU CLOAK preset xx3xx',
+    Name = 'TechAI SACU CLOAK preset xx3xx',
     FactionSquads = {
         Cybran = {
             { categories.PCLOAK, 1, 1, 'Attack', 'None' }
@@ -138,7 +138,7 @@ PlatoonTemplate {
     }
 }
 PlatoonTemplate {
-    Name = 'RNGAI SACU MISSILE preset xxx4x',
+    Name = 'TechAI SACU MISSILE preset xxx4x',
     FactionSquads = {
         Seraphim = {
             { categories.PMISSILE, 1, 1, 'Attack', 'None' }
@@ -146,7 +146,7 @@ PlatoonTemplate {
     }
 }
 PlatoonTemplate {
-    Name = 'RNGAI SACU ADVANCEDCOMBAT preset xxx4x',
+    Name = 'TechAI SACU ADVANCEDCOMBAT preset xxx4x',
     FactionSquads = {
         Seraphim = {
             { categories.PADVANCEDCOMBAT, 1, 1, 'Attack', 'None' }
@@ -154,7 +154,7 @@ PlatoonTemplate {
     }
 }
 PlatoonTemplate {
-    Name = 'RNGAI SACU ROCKET preset xxxx5',
+    Name = 'TechAI SACU ROCKET preset xxxx5',
     FactionSquads = {
         Nomads = {
             { categories.PROCKET, 1, 1, 'Attack', 'None' }
@@ -162,7 +162,7 @@ PlatoonTemplate {
     }
 }
 PlatoonTemplate {
-    Name = 'RNGAI SACU ANTINAVAL preset xxxx5',
+    Name = 'TechAI SACU ANTINAVAL preset xxxx5',
     FactionSquads = {
         Nomads = {
             { categories.PANTINAVAL, 1, 1, 'Attack', 'None' }
@@ -170,7 +170,7 @@ PlatoonTemplate {
     }
 }
 PlatoonTemplate {
-    Name = 'RNGAI SACU AMPHIBIOUS preset xxxx5',
+    Name = 'TechAI SACU AMPHIBIOUS preset xxxx5',
     FactionSquads = {
         Nomads = {
             { categories.PAMPHIBIOUS, 1, 1, 'Attack', 'None' }
@@ -178,7 +178,7 @@ PlatoonTemplate {
     }
 }
 PlatoonTemplate {
-    Name = 'RNGAI SACU GUNSLINGER preset  xxxx5',
+    Name = 'TechAI SACU GUNSLINGER preset  xxxx5',
     FactionSquads = {
         Nomads = {
             { categories.PGUNSLINGER, 1, 1, 'Attack', 'None' }
@@ -186,7 +186,7 @@ PlatoonTemplate {
     }
 }
 PlatoonTemplate {
-    Name = 'RNGAI SACU NATURALPRODUCER preset xxxx5',
+    Name = 'TechAI SACU NATURALPRODUCER preset xxxx5',
     FactionSquads = {
         Nomads = {
             { categories.PNATURALPRODUCER, 1, 1, 'Attack', 'None' }
@@ -194,7 +194,7 @@ PlatoonTemplate {
     }
 }
 PlatoonTemplate {
-    Name = 'RNGAI SACU DEFAULT preset xxxx5',
+    Name = 'TechAI SACU DEFAULT preset xxxx5',
     FactionSquads = {
         Nomads = {
             { categories.PDEFAULT, 1, 1, 'Attack', 'None' }
@@ -202,7 +202,7 @@ PlatoonTemplate {
     }
 }
 PlatoonTemplate {
-    Name = 'RNGAI SACU HEAVYTROOPER preset xxxx5',
+    Name = 'TechAI SACU HEAVYTROOPER preset xxxx5',
     FactionSquads = {
         Nomads = {
             { categories.PHEAVYTROOPER, 1, 1, 'Attack', 'None' }
@@ -210,7 +210,7 @@ PlatoonTemplate {
     }
 }
 PlatoonTemplate {
-    Name = 'RNGAI SACU FASTCOMBAT preset xxxx5',
+    Name = 'TechAI SACU FASTCOMBAT preset xxxx5',
     FactionSquads = {
         Nomads = {
             { categories.PFASTCOMBAT, 1, 1, 'Attack', 'None' }
@@ -219,7 +219,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate {
-    Name = 'RNGAI SACU Engineer preset',
+    Name = 'TechAI SACU Engineer preset',
     FactionSquads = {
         UEF = {
             { 'uel0301_engineer', 1, 1, 'attack', 'None' }
@@ -240,7 +240,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate {
-    Name = 'RNGAI SACU RAS preset 123x5',
+    Name = 'TechAI SACU RAS preset 123x5',
     FactionSquads = {
         UEF = {
             { 'uel0301_RAS', 1, 1, 'Attack', 'None' }
@@ -258,7 +258,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate {
-    Name = 'RNGAI SACU Rambo preset',
+    Name = 'TechAI SACU Rambo preset',
     FactionSquads = {
         UEF = {
             { 'uel0301_Rambo', 1, 1, 'attack', 'None' }
@@ -279,7 +279,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate {
-    Name = 'RNGAI SACU Combat preset',
+    Name = 'TechAI SACU Combat preset',
     FactionSquads = {
         UEF = {
             { 'uel0301_Combat', 1, 1, 'attack', 'None' }

@@ -1,5 +1,5 @@
 PlatoonTemplate {
-    Name = 'RNGAI Sea Hunt',
+    Name = 'TechAI Sea Hunt',
     Plan = 'NavalHuntAIRNG',
     GlobalSquads = {
         { categories.MOBILE * categories.NAVAL * categories.ANTINAVY, 1, 10, 'Attack', 'GrowthFormation' }
@@ -7,7 +7,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate {
-    Name = 'RNGAI Sea Mass Raid T1',
+    Name = 'TechAI Sea Mass Raid T1',
     Plan = 'MassRaidRNG',
     GlobalSquads = {
         { categories.MOBILE * categories.NAVAL * categories.SUBMERSIBLE * categories.TECH1, 1, 10, 'Attack', 'GrowthFormation' }
@@ -15,7 +15,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate {
-    Name = 'RNGAI Sea Attack T1',
+    Name = 'TechAI Sea Attack T1',
     Plan = 'NavalForceAI',
     GlobalSquads = {
         { categories.MOBILE * categories.NAVAL * categories.SUBMERSIBLE * categories.TECH1, 1, 20, 'Attack', 'GrowthFormation' },
@@ -24,7 +24,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate {
-    Name = 'RNGAI Sea Attack T123',
+    Name = 'TechAI Sea Attack T123',
     Plan = 'NavalForceAI',
     GlobalSquads = {
         { categories.MOBILE * categories.NAVAL * categories.SUBMERSIBLE, 0, 20, 'Attack', 'GrowthFormation' },
@@ -35,7 +35,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate {
-    Name = 'RNGAI Sea Attack Ranged T123',
+    Name = 'TechAI Sea Attack Ranged T123',
     Plan = 'NavalRangedAIRNG',
     GlobalSquads = {
         { categories.MOBILE * categories.NAVAL * categories.SUBMERSIBLE, 0, 20, 'Attack', 'GrowthFormation' },
@@ -46,7 +46,7 @@ PlatoonTemplate {
 
 
 PlatoonTemplate {
-    Name = 'RNGAIT1SeaAttackQueue',
+    Name = 'TechAIT1SeaAttackQueue',
     FactionSquads = {
         UEF = {
             { 'ues0203', 1, 1, 'attack', 'none' },
@@ -69,7 +69,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate {
-    Name = 'RNGAIT1SeaSubQueue',
+    Name = 'TechAIT1SeaSubQueue',
     FactionSquads = {
         UEF = {
             { 'ues0203', 1, 3, 'attack', 'none' },
@@ -91,7 +91,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate {
-    Name = 'RNGAIT2SeaSubQueue',
+    Name = 'TechAIT2SeaSubQueue',
     FactionSquads = {
         UEF = {
             { 'ues0203', 1, 1, 'attack', 'none' },
@@ -116,7 +116,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate { 
-    Name = 'RNGAIT2SeaAttackQueue',
+    Name = 'TechAIT2SeaAttackQueue',
     FactionSquads = {
         UEF = {
             { 'ues0201', 1, 2, 'Attack', 'none' },       -- Sea Destroyer
@@ -144,7 +144,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate { 
-    Name = 'RNGAIT2SeaAttackRangedQueue',
+    Name = 'TechAIT2SeaAttackRangedQueue',
     FactionSquads = {
         UEF = {
             { 'ues0201', 1, 2, 'Attack', 'none' },       -- Sea Destroyer
@@ -170,7 +170,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate { 
-    Name = 'RNGAIT3SeaAttackRangedQueue',
+    Name = 'TechAIT3SeaAttackRangedQueue',
     FactionSquads = {
         UEF = {
             { 'ues0201', 1, 2, 'Attack', 'none' },       -- Sea Destroyer
@@ -193,7 +193,7 @@ PlatoonTemplate {
 
 
 PlatoonTemplate {
-    Name = 'RNGAIT3SeaSubQueue',
+    Name = 'TechAIT3SeaSubQueue',
     FactionSquads = {
         UEF = {
             { 'ues0203', 1, 1, 'attack', 'none' },
@@ -223,7 +223,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate { 
-    Name = 'RNGAIT3SeaAttackQueue',
+    Name = 'TechAIT3SeaAttackQueue',
     FactionSquads = {
         UEF = {
             { 'ues0201', 1, 2, 'Attack', 'none' },       -- Sea Destroyer

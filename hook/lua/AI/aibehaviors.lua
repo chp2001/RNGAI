@@ -1,10 +1,10 @@
-WARN('['..string.gsub(debug.getinfo(1).source, ".*\\(.*.lua)", "%1")..', line:'..debug.getinfo(1).currentline..'] * RNGAI: offset aibehaviors.lua' )
+WARN('['..string.gsub(debug.getinfo(1).source, ".*\\(.*.lua)", "%1")..', line:'..debug.getinfo(1).currentline..'] * TechAI: offset aibehaviors.lua' )
 
---local BaseRestrictedArea, BaseMilitaryArea, BaseDMZArea, BaseEnemyArea = import('/mods/RNGAI/lua/AI/RNGUtilities.lua').GetMOARadii()
-local UnitRatioCheckRNG = import('/mods/RNGAI/lua/AI/RNGUtilities.lua').UnitRatioCheckRNG
-local lerpy = import('/mods/RNGAI/lua/AI/RNGUtilities.lua').lerpy
-local SetArcPoints = import('/mods/RNGAI/lua/AI/RNGUtilities.lua').SetArcPoints
-local GeneratePointsAroundPosition = import('/mods/RNGAI/lua/AI/RNGUtilities.lua').GeneratePointsAroundPosition
+--local BaseRestrictedArea, BaseMilitaryArea, BaseDMZArea, BaseEnemyArea = import('/mods/TechAI/lua/AI/RNGUtilities.lua').GetMOARadii()
+local UnitRatioCheckRNG = import('/mods/TechAI/lua/AI/RNGUtilities.lua').UnitRatioCheckRNG
+local lerpy = import('/mods/TechAI/lua/AI/RNGUtilities.lua').lerpy
+local SetArcPoints = import('/mods/TechAI/lua/AI/RNGUtilities.lua').SetArcPoints
+local GeneratePointsAroundPosition = import('/mods/TechAI/lua/AI/RNGUtilities.lua').GeneratePointsAroundPosition
 local GetEconomyStored = moho.aibrain_methods.GetEconomyStored
 local GetEconomyStoredRatio = moho.aibrain_methods.GetEconomyStoredRatio
 local GetEconomyTrend = moho.aibrain_methods.GetEconomyTrend
@@ -61,7 +61,6 @@ function CommanderThreadRNG(cdr, platoon)
     --LOG('* AI-RNG: Starting CommanderThreadRNG')
     local aiBrain = cdr:GetAIBrain()
     
-    aiBrain:BuildScoutLocationsRNG()
     cdr.UnitBeingBuiltBehavior = false
     -- Added to ensure we know the start locations (thanks to Sorian).
     SetCDRDefaults(aiBrain, cdr, platoon)
@@ -70,14 +69,6 @@ function CommanderThreadRNG(cdr, platoon)
 
     while not cdr.Dead do
         -- Overcharge
-        if (aiBrain.EnemyIntel.EnemyThreatCurrent.ACUGunUpgrades > 0) and (not cdr.GunUpgradePresent) and (GetGameTimeSeconds() < 1500) then
-            if CDRGunCheck(aiBrain, cdr) then
-                --LOG('ACU Requires Gun set upgrade flag to true')
-                cdr.GunUpgradeRequired = true
-            else
-                cdr.GunUpgradeRequired = false
-            end
-        end
 
         if not cdr.Dead then
             CDREnhancementsRNG(aiBrain, cdr)
@@ -232,7 +223,6 @@ function CDROverChargeRNG(aiBrain, cdr)
     local cdrPos = cdr.CDRHome
     local numUnits = GetNumUnitsAroundPoint(aiBrain, categories.LAND - categories.SCOUT, cdrPos, (maxRadius), 'Enemy')
     local acuUnits = GetNumUnitsAroundPoint(aiBrain, categories.LAND * categories.COMMAND - categories.SCOUT, cdrPos, (maxRadius), 'Enemy')
-    local distressLoc = aiBrain:BaseMonitorDistressLocationRNG(cdrPos)
     local overCharging = false
 
     -- Don't move if upgrading
@@ -244,7 +234,7 @@ function CDROverChargeRNG(aiBrain, cdr)
         return
     end
 
-    if numUnits > 1 or (not cdr.DistressCall and distressLoc and VDist2(distressLoc[1], distressLoc[3], cdrPos[1], cdrPos[3]) < distressRange) then
+    if numUnits > 1 then
         --LOG('Num of units greater than zero or base distress')
         if cdr.UnitBeingBuilt then
             --LOG('Unit being built is true, assign to cdr.UnitBeingBuiltBehavior')
@@ -407,21 +397,6 @@ function CDROverChargeRNG(aiBrain, cdr)
                     if not target then
                         --LOG('No longer have target')
                     end
-
-                elseif distressLoc then
-                    --LOG('* AI-RNG: ACU Detected Distress Location')
-                    enemyThreat = aiBrain:GetThreatAtPosition(distressLoc, 1, true, 'AntiSurface')
-                    local enemyCdrThreat = aiBrain:GetThreatAtPosition(distressLoc, 1, true, 'Commander')
-                    local friendlyThreat = aiBrain:GetThreatAtPosition(distressLoc, 1, true, 'AntiSurface', aiBrain:GetArmyIndex())
-                    if enemyThreat - enemyCdrThreat >= friendlyThreat + (cdrThreat / 3) then
-                        break
-                    end
-                    if distressLoc and (VDist2(distressLoc[1], distressLoc[3], cdrPos[1], cdrPos[3]) < distressRange) then
-                        IssueClearCommands({cdr})
-                        --LOG('* AI-RNG: ACU Moving to distress location')
-                        cdr.PlatoonHandle:MoveToLocation(distressLoc, false)
-                        cdr.PlatoonHandle:MoveToLocation(cdr.CDRHome, false)
-                    end
                 end
             end
 
@@ -435,14 +410,12 @@ function CDROverChargeRNG(aiBrain, cdr)
                 counter = counter + 5
             end
 
-            distressLoc = aiBrain:BaseMonitorDistressLocationRNG(cdrPos)
             if cdr.Dead then
                 --LOG('CDR Considered dead, returning')
                 return
             end
 
-            if GetNumUnitsAroundPoint(aiBrain, categories.LAND - categories.SCOUT, cdrPos, maxRadius, 'Enemy') <= 0
-                and (not distressLoc or Utilities.XZDistanceTwoVectors(distressLoc, cdrPos) > distressRange) then
+            if GetNumUnitsAroundPoint(aiBrain, categories.LAND - categories.SCOUT, cdrPos, maxRadius, 'Enemy') <= 0 then
                 continueFighting = false
             end
             -- If com is down to yellow then dont keep fighting
@@ -454,7 +427,7 @@ function CDROverChargeRNG(aiBrain, cdr)
                 end
             end
             if continueFighting == true then
-                local acuIMAPThreat = aiBrain:GetThreatAtPosition(cdrPos, aiBrain.BrainIntel.IMAPConfig.Rings, true, 'Land') + (aiBrain:GetThreatAtPosition(cdrPos, aiBrain.BrainIntel.IMAPConfig.Rings, true, 'Commander') / 2)
+                local acuIMAPThreat = aiBrain:GetThreatAtPosition(cdrPos, 4, true, 'Land') + (aiBrain:GetThreatAtPosition(cdrPos, 4, true, 'Commander') / 2)
                 LOG('acuIMAPThreat '..acuIMAPThreat)
 
                 local enemyUnits = GetUnitsAroundPoint(aiBrain, (categories.STRUCTURE * categories.DEFENSE) + (categories.MOBILE * (categories.LAND + categories.AIR) - categories.SCOUT - categories.ENGINEER ), cdr:GetPosition(), 70, 'Enemy')
@@ -500,7 +473,7 @@ function CDROverChargeRNG(aiBrain, cdr)
                     cdr.GunUpgradeRequired = true
                 end
             end
-            if (aiBrain.EnemyIntel.EnemyThreatCurrent.ACUGunUpgrades > 0) and (not cdr.GunUpgradePresent) and (GetGameTimeSeconds() < 1500) then
+            if (not cdr.GunUpgradePresent) and (GetGameTimeSeconds() < 1500) then
                 if CDRGunCheck(aiBrain, cdr) then
                     --LOG('ACU Requires Gun set upgrade flag to true, continue fighting set to false')
                     cdr.GunUpgradeRequired = true
@@ -707,51 +680,6 @@ function CDRGetUnitClump(aiBrain, cdrPos, radius)
         end
     end
     return false
-end
-
-function ACUDetection(platoon)
-    
-    local aiBrain = platoon:GetBrain()
-    local ACUTable = aiBrain.EnemyIntel.ACU
-    local scanWait = platoon.PlatoonData.ScanWait
-    local unit = platoon:GetPlatoonUnits()[1]
-
-    --LOG('* AI-RNG: ACU Detection Behavior Running')
-    if ACUTable then 
-        while not unit.Dead do
-            local currentGameTime = GetGameTimeSeconds()
-            local acuUnits = GetUnitsAroundPoint(aiBrain, categories.COMMAND, unit:GetPosition(), 40, 'Enemy')
-            if acuUnits[1] then
-                --LOG('* AI-RNG: ACU Detected')
-                for _, v in acuUnits do
-                    --unitDesc = GetBlueprint(v).Description
-                    --LOG('* AI-RNG: Units is'..unitDesc)
-                    enemyIndex = v:GetAIBrain():GetArmyIndex()
-                    --LOG('* AI-RNG: EnemyIndex :'..enemyIndex)
-                    --LOG('* AI-RNG: Curent Game Time : '..currentGameTime)
-                    --LOG('* AI-RNG: Iterating ACUTable')
-                    for k, c in ACUTable do
-                        --LOG('* AI-RNG: Table Index is : '..k)
-                        --LOG('* AI-RNG:'..c.LastSpotted)
-                        --LOG('* AI-RNG:'..repr(c.Position))
-                        if currentGameTime - 5 > c.LastSpotted and k == enemyIndex then
-                            --LOG('* AI-RNG: CurrentGameTime IF is true updating tables')
-                            c.Position = v:GetPosition()
-                            c.Hp = v:GetHealth()
-                            --LOG('AIRSCOUTACUDETECTION Enemy ACU of index '..enemyIndex..'has '..c.Hp..' health')
-                            acuThreat = aiBrain:GetThreatAtPosition(c.Position, 0, true, 'AntiAir')
-                            --LOG('* AI-RNG: Threat at ACU location is :'..acuThreat)
-                            c.Threat = acuThreat
-                            c.LastSpotted = currentGameTime
-                        end
-                    end
-                end
-            end
-            WaitTicks(scanWait)
-        end
-    else
-            WARN('No EnemyIntel ACU Table found, is the game still initializing?')
-    end
 end
 
 -- 80% of the below was Sprouto's work
@@ -1219,45 +1147,45 @@ function CDREnhancementsRNG(aiBrain, cdr)
                 ['xnl0001'] = {Combat = {'Capacitor', 'GunUpgrade', 'MovementSpeedIncrease', 'DoubleGuns'},},
             }
             local CRDBlueprint = cdr:GetBlueprint()
-            --LOG('* RNGAI: BlueprintId '..repr(CRDBlueprint.BlueprintId))
+            --LOG('* TechAI: BlueprintId '..repr(CRDBlueprint.BlueprintId))
             local ACUUpgradeList = ACUEnhancements[CRDBlueprint.BlueprintId][upgradeMode]
-            --LOG('* RNGAI: ACUUpgradeList '..repr(ACUUpgradeList))
+            --LOG('* TechAI: ACUUpgradeList '..repr(ACUUpgradeList))
             local NextEnhancement = false
             local HaveEcoForEnhancement = false
             for _,enhancement in ACUUpgradeList or {} do
                 local wantedEnhancementBP = CRDBlueprint.Enhancements[enhancement]
                 local enhancementName = enhancement
-                --LOG('* RNGAI: wantedEnhancementBP '..repr(wantedEnhancementBP))
+                --LOG('* TechAI: wantedEnhancementBP '..repr(wantedEnhancementBP))
                 if not wantedEnhancementBP then
-                    SPEW('* RNGAI: no enhancement found for  = '..repr(enhancement))
+                    SPEW('* TechAI: no enhancement found for  = '..repr(enhancement))
                 elseif cdr:HasEnhancement(enhancement) then
                     NextEnhancement = false
-                    --LOG('* RNGAI: * BuildACUEnhancements: Enhancement is already installed: '..enhancement)
+                    --LOG('* TechAI: * BuildACUEnhancements: Enhancement is already installed: '..enhancement)
                 elseif EnhancementEcoCheckRNG(aiBrain, cdr, wantedEnhancementBP, enhancementName) then
-                    --LOG('* RNGAI: * BuildACUEnhancements: Eco is good for '..enhancement)
+                    --LOG('* TechAI: * BuildACUEnhancements: Eco is good for '..enhancement)
                     if not NextEnhancement then
                         NextEnhancement = enhancement
                         HaveEcoForEnhancement = true
-                        --LOG('* RNGAI: *** Set as Enhancememnt: '..NextEnhancement)
+                        --LOG('* TechAI: *** Set as Enhancememnt: '..NextEnhancement)
                     end
                 else
-                    --LOG('* RNGAI: * BuildACUEnhancements: Eco is bad for '..enhancement)
+                    --LOG('* TechAI: * BuildACUEnhancements: Eco is bad for '..enhancement)
                     if not NextEnhancement then
                         NextEnhancement = enhancement
                         HaveEcoForEnhancement = false
                         -- if we don't have the eco for this ugrade, stop the search
-                        --LOG('* RNGAI: canceled search. no eco available')
+                        --LOG('* TechAI: canceled search. no eco available')
                         break
                     end
                 end
             end
             if NextEnhancement and HaveEcoForEnhancement then
-                --LOG('* RNGAI: * BuildACUEnhancements Building '..NextEnhancement)
+                --LOG('* TechAI: * BuildACUEnhancements Building '..NextEnhancement)
                 if BuildEnhancement(aiBrain, cdr, NextEnhancement) then
-                    --LOG('* RNGAI: * BuildACUEnhancements returned true'..NextEnhancement)
+                    --LOG('* TechAI: * BuildACUEnhancements returned true'..NextEnhancement)
                     return true
                 else
-                    --LOG('* RNGAI: * BuildACUEnhancements returned false'..NextEnhancement)
+                    --LOG('* TechAI: * BuildACUEnhancements returned false'..NextEnhancement)
                     return false
                 end
             end
@@ -1278,7 +1206,7 @@ EnhancementEcoCheckRNG = function(aiBrain,cdr,enhancement, enhancementName)
         'RateOfFire'
     }
     if not enhancement.BuildTime then
-        WARN('* RNGAI: EcoGoodForUpgrade: Enhancement has no buildtime: '..repr(enhancement))
+        WARN('* TechAI: EcoGoodForUpgrade: Enhancement has no buildtime: '..repr(enhancement))
     end
     --LOG('Enhancement EcoCheck for '..enhancementName)
     for k, v in priorityUpgrades do
@@ -1288,27 +1216,27 @@ EnhancementEcoCheckRNG = function(aiBrain,cdr,enhancement, enhancementName)
             break
         end
     end
-    --LOG('* RNGAI: cdr:GetBuildRate() '..BuildRate..'')
+    --LOG('* TechAI: cdr:GetBuildRate() '..BuildRate..'')
     local drainMass = (BuildRate / enhancement.BuildTime) * enhancement.BuildCostMass
     local drainEnergy = (BuildRate / enhancement.BuildTime) * enhancement.BuildCostEnergy
-    --LOG('* RNGAI: drain: m'..drainMass..'  e'..drainEnergy..'')
-    --LOG('* RNGAI: Pump: m'..math.floor(aiBrain:GetEconomyTrend('MASS')*10)..'  e'..math.floor(aiBrain:GetEconomyTrend('ENERGY')*10)..'')
+    --LOG('* TechAI: drain: m'..drainMass..'  e'..drainEnergy..'')
+    --LOG('* TechAI: Pump: m'..math.floor(aiBrain:GetEconomyTrend('MASS')*10)..'  e'..math.floor(aiBrain:GetEconomyTrend('ENERGY')*10)..'')
     if priorityUpgrade and cdr.GunUpgradeRequired then
         if (GetGameTimeSeconds() < 1500) and (GetEconomyIncome(aiBrain, 'ENERGY') > 40)
          and (GetEconomyIncome(aiBrain, 'MASS') > 1.0) then
-            --LOG('* RNGAI: Gun Upgrade Eco Check True')
+            --LOG('* TechAI: Gun Upgrade Eco Check True')
             return true
         end
     elseif aiBrain:GetEconomyTrend('MASS')*10 >= drainMass and aiBrain:GetEconomyTrend('ENERGY')*10 >= drainEnergy
     and aiBrain:GetEconomyStoredRatio('MASS') > 0.05 and aiBrain:GetEconomyStoredRatio('ENERGY') > 0.95 then
         return true
     end
-    --LOG('* RNGAI: Upgrade Eco Check False')
+    --LOG('* TechAI: Upgrade Eco Check False')
     return false
 end
 
 BuildEnhancement = function(aiBrain,cdr,enhancement)
-    --LOG('* RNGAI: * BuildEnhancement '..enhancement)
+    --LOG('* TechAI: * BuildEnhancement '..enhancement)
     local priorityUpgrades = {
         'HeavyAntiMatterCannon',
         'HeatSink',
@@ -1327,12 +1255,12 @@ BuildEnhancement = function(aiBrain,cdr,enhancement)
         -- Do we have already a enhancment in this slot ?
         if unitEnhancements[tempEnhanceBp.Slot] and unitEnhancements[tempEnhanceBp.Slot] ~= tempEnhanceBp.Prerequisite then
             -- remove the enhancement
-            --LOG('* RNGAI: * Found enhancement ['..unitEnhancements[tempEnhanceBp.Slot]..'] in Slot ['..tempEnhanceBp.Slot..']. - Removing...')
+            --LOG('* TechAI: * Found enhancement ['..unitEnhancements[tempEnhanceBp.Slot]..'] in Slot ['..tempEnhanceBp.Slot..']. - Removing...')
             local order = { TaskName = "EnhanceTask", Enhancement = unitEnhancements[tempEnhanceBp.Slot]..'Remove' }
             IssueScript({cdr}, order)
             coroutine.yield(10)
         end
-        --LOG('* RNGAI: * BuildEnhancement: '..aiBrain.Nickname..' IssueScript: '..enhancement)
+        --LOG('* TechAI: * BuildEnhancement: '..aiBrain.Nickname..' IssueScript: '..enhancement)
         if cdr.Upgrading then
             --LOG('cdr.Upgrading is set to true')
         end
@@ -1344,7 +1272,7 @@ BuildEnhancement = function(aiBrain,cdr,enhancement)
             --LOG('cdr.Upgrading is set to true')
         end
         if cdr:GetHealthPercent() < 0.40 then
-            --LOG('* RNGAI: * BuildEnhancement: '..aiBrain:GetBrain().Nickname..' Emergency!!! low health, canceling Enhancement '..enhancement)
+            --LOG('* TechAI: * BuildEnhancement: '..aiBrain:GetBrain().Nickname..' Emergency!!! low health, canceling Enhancement '..enhancement)
             IssueStop({cdr})
             IssueClearCommands({cdr})
             cdr.Upgrading = false
@@ -1352,7 +1280,7 @@ BuildEnhancement = function(aiBrain,cdr,enhancement)
         end
         coroutine.yield(10)
     end
-    --LOG('* RNGAI: * BuildEnhancement: '..aiBrain:GetBrain().Nickname..' Upgrade finished '..enhancement)
+    --LOG('* TechAI: * BuildEnhancement: '..aiBrain:GetBrain().Nickname..' Upgrade finished '..enhancement)
     for k, v in priorityUpgrades do
         if enhancement == v then
             cdr.GunUpgradeRequired = false
@@ -1503,64 +1431,6 @@ PlatoonRetreat = function (platoon)
             end
         end
         WaitTicks(50)
-    end
-end
-
-TargetControlThread = function (platoon)
-    local aiBrain = platoon:GetBrain()
-    
-    local TargetControlTemplates = {
-        structureMode = {
-                        'EXPERIMENTAL',
-                        'STRUCTURE DEFENSE',
-                        'MOBILE LAND INDIRECTFIRE',
-                        'MOBILE LAND DIRECTFIRE',
-                        'MASSEXTRACTION',
-                        'ENERGYPRODUCTION',
-                        'COMMAND',
-                        'MASSFABRICATION',
-                        'SHIELD',
-                        'STRUCTURE',
-                        'ALLUNITS',
-                    },
-
-        antiAirMode = {
-                        'EXPERIMENTAL',
-                        'MOBILE LAND ANTIAIR',
-                        'STRUCTURE ANTIAIR',
-                        'MOBILE LAND INDIRECTFIRE',
-                        'MOBILE LAND DIRECTFIRE',
-                        'STRUCTURE DEFENSE',
-                        'MASSEXTRACTION',
-                        'ENERGYPRODUCTION',
-                        'COMMAND',
-                        'MASSFABRICATION',
-                        'SHIELD',
-                        'STRUCTURE',
-                        'ALLUNITS',
-                    },
-
-        antiLandMode = {
-                        'EXPERIMENTAL',
-                        'MOBILE LAND DIRECTFIRE',
-                        'MOBILE LAND INDIRECTFIRE',
-                        'STRUCTURE DEFENSE',
-                        'MASSEXTRACTION',
-                        'ENERGYPRODUCTION',
-                        'COMMAND',
-                        'MASSFABRICATION',
-                        'SHIELD',
-                        'STRUCTURE',
-                        'ALLUNITS',
-                    },
-                }
-    while aiBrain:PlatoonExists(platoon) do
-        if aiBrain.EnemyIntel.EnemyThreatCurrent.DefenseAir > 20 then
-            local artillerySquad = platoon:GetSquadUnits('Artillery')
-            platoon:SetPrioritizedTargetList('Artillery', TargetControlTemplates.structureMode)
-        end
-        --LOG('TargetControlThread')
-        WaitTicks(30)
     end
 end
 

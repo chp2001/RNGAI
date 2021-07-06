@@ -52,7 +52,7 @@ Valid Threat Options:
 
 local PropBlacklist = {}
 -- This uses a mix of Uveso's reclaim logic and my own
-function ReclaimRNGAIThread(platoon, self, aiBrain)
+function ReclaimTechAIThread(platoon, self, aiBrain)
 
     --LOG('* AI-RNG: Start Reclaim Function')
     if aiBrain.StartReclaimTaken then
@@ -298,10 +298,10 @@ function GetMOARadii(bool)
     local BaseEnemyArea = math.max( ScenarioInfo.size[1], ScenarioInfo.size[2] ) * 1.5
     -- "bool" is only true if called from "AIBuilders/Mobile Land.lua", so we only print this once.
     if bool then
-        --LOG('* RNGAI: BaseRestrictedArea= '..math.floor( BaseRestrictedArea * 0.01953125 ) ..' Km - ('..BaseRestrictedArea..' units)' )
-        --LOG('* RNGAI: BaseMilitaryArea= '..math.floor( BaseMilitaryArea * 0.01953125 )..' Km - ('..BaseMilitaryArea..' units)' )
-        --LOG('* RNGAI: BaseDMZArea= '..math.floor( BaseDMZArea * 0.01953125 )..' Km - ('..BaseDMZArea..' units)' )
-        --LOG('* RNGAI: BaseEnemyArea= '..math.floor( BaseEnemyArea * 0.01953125 )..' Km - ('..BaseEnemyArea..' units)' )
+        --LOG('* TechAI: BaseRestrictedArea= '..math.floor( BaseRestrictedArea * 0.01953125 ) ..' Km - ('..BaseRestrictedArea..' units)' )
+        --LOG('* TechAI: BaseMilitaryArea= '..math.floor( BaseMilitaryArea * 0.01953125 )..' Km - ('..BaseMilitaryArea..' units)' )
+        --LOG('* TechAI: BaseDMZArea= '..math.floor( BaseDMZArea * 0.01953125 )..' Km - ('..BaseDMZArea..' units)' )
+        --LOG('* TechAI: BaseEnemyArea= '..math.floor( BaseEnemyArea * 0.01953125 )..' Km - ('..BaseEnemyArea..' units)' )
     end
     return BaseRestrictedArea, BaseMilitaryArea, BaseDMZArea, BaseEnemyArea
 end
@@ -3415,6 +3415,9 @@ function MexUpgradeManagerRNG(aiBrain)
     local homebasex,homebasey = aiBrain:GetArmyStartPos()
     local homepos = {homebasex,GetTerrainHeight(homebasex,homebasey),homebasey}
     local ratio=0.35
+    if true then
+        return
+    end
     while not aiBrain.cmanager.categoryspend or GetGameTimeSeconds()<250 do
         WaitSeconds(10)
     end
@@ -3502,7 +3505,7 @@ end
 function DisplayMarkerAdjacency(aiBrain)
     aiBrain:ForkThread(LastKnownThread)
     local expansionMarkers = Scenario.MasterChain._MASTERCHAIN_.Markers
-    aiBrain.RNGAreas={}
+    aiBrain.TechAIAreas={}
     aiBrain.renderlines={}
     aiBrain.armyspots={}
     aiBrain.expandspots={}
@@ -3521,8 +3524,8 @@ function DisplayMarkerAdjacency(aiBrain)
                 break
             end
         end
-        if node and not marker.RNGArea then
-            aiBrain.RNGAreas[k]={}
+        if node and not marker.TechAIArea then
+            aiBrain.TechAIAreas[k]={}
             InfectMarkersRNG(aiBrain,marker,k)
         end
         if expand then
@@ -3791,7 +3794,7 @@ function DisplayMarkerAdjacency(aiBrain)
         end
     end
     LOG('RNGAreas:')
-    for k,v in aiBrain.RNGAreas do
+    for k,v in aiBrain.TechAIAreas do
         LOG(repr(k)..' has '..repr(table.getn(v))..' nodes')
     end
     --[[
@@ -3822,10 +3825,10 @@ function DisplayMarkerAdjacency(aiBrain)
     --]]
 end
 function InfectMarkersRNG(aiBrain,marker,graphname)
-    marker.RNGArea=graphname
-    table.insert(aiBrain.RNGAreas[graphname],marker)
+    marker.TechAIArea=graphname
+    table.insert(aiBrain.TechAIAreas[graphname],marker)
     for i, node in STR_GetTokens(marker.adjacentTo or '', ' ') do
-        if not Scenario.MasterChain._MASTERCHAIN_.Markers[node].RNGArea then
+        if not Scenario.MasterChain._MASTERCHAIN_.Markers[node].TechAIArea then
             InfectMarkersRNG(aiBrain,Scenario.MasterChain._MASTERCHAIN_.Markers[node],graphname)
         end
     end
@@ -3952,7 +3955,7 @@ function CanGraphToRNGArea(unit, destPos, layer)
         endNode = Scenario.MasterChain._MASTERCHAIN_.Markers[AIAttackUtils.GetClosestPathNodeInRadiusByLayer(destPos,30,layer).name]
     end
 
-    if endNode.RNGArea==startNode.RNGArea then
+    if endNode.TechAIArea==startNode.TechAIArea then
         return true, endNode.position
     end
 end
@@ -4163,5 +4166,77 @@ RenderBrainIntelRNG = function(aiBrain)
             end
         end
         WaitTicks(2)
+    end
+end
+RenderBuildQueue = function(eng)
+    LOG('renderbuildqueue starting')
+    local function EngineerTemporaryCircleRender(eng,pos,color,rad)
+        for _=0,10 do
+            for _=0,5 do
+                DrawCircle(pos,rad or 5,color)
+                WaitTicks(2)
+            end
+            WaitTicks(5)
+        end
+    end
+    local function EngineerTemporaryLineRender(eng,pos,color,pos2)
+        if not pos2 then
+            for _=0,25 do
+                if not eng or eng.Dead then return end
+                DrawLinePop(eng:GetPosition(),pos,color)
+                WaitTicks(2)
+            end
+        else
+            for _=0,25 do
+                DrawLinePop(pos,pos2,color)
+                WaitTicks(2)
+            end
+        end
+    end
+    if eng.renderbuildqueue then return end
+    aiBrain=eng:GetAIBrain()
+    eng.renderbuildqueue=true
+    WaitTicks(3)
+    local function normalposition(vec)
+        return {vec[1],GetSurfaceHeight(vec[1],vec[2]),vec[2]}
+    end
+    local function RNGtemporaryrenderbuildsquare(pos,x,y)
+        local pos1={pos[1]-x/2,pos[3]-y/2}
+        local pos2={pos1[1]+x,pos1[2]}
+        local pos3={pos2[1],pos2[2]+y}
+        local pos4={pos3[1]-x,pos3[2]}
+        for _=0,25 do
+            DrawLine(normalposition(pos1),normalposition(pos2),'FF4CFF00')
+            DrawLine(normalposition(pos2),normalposition(pos3),'FF4CFF00')
+            DrawLine(normalposition(pos3),normalposition(pos4),'FF4CFF00')
+            DrawLine(normalposition(pos4),normalposition(pos1),'FF4CFF00')
+            WaitTicks(2)
+        end
+    end
+    local function positionparse(build)
+        if build[4] then
+            return build[2]
+        else
+            return normalposition(build[2])
+        end
+    end
+    while not eng.Dead do
+        if not eng or eng.Dead then return end
+        if not eng.EngineerBuildQueue or table.getn(eng.EngineerBuildQueue)<1 then
+            DrawCircle(eng:GetPosition(),3,'FFFF0000')
+            WaitTicks(2)
+            continue
+        end
+        for i,v in eng.EngineerBuildQueue do
+            if i==1 then
+                ForkThread(EngineerTemporaryLineRender,eng,positionparse(v),'da4CFF00')
+            else
+                ForkThread(EngineerTemporaryLineRender,eng,positionparse(eng.EngineerBuildQueue[i-1]),'aa4CFF00',positionparse(v))
+            end
+            ForkThread(RNGtemporaryrenderbuildsquare,positionparse(v),aiBrain:GetUnitBlueprint(v[1]).Physics.SkirtSizeX,aiBrain:GetUnitBlueprint(v[1]).Physics.SkirtSizeZ)
+        end
+        for _=0,25 do
+            WaitTicks(2)
+        end
     end
 end

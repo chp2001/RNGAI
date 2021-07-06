@@ -3,7 +3,7 @@
 -- Former Templates --
 
 PlatoonTemplate {
-    Name = 'RNGAI AntiAirHunt',
+    Name = 'TechAI AntiAirHunt',
     Plan = 'AirHuntAIRNG',
     GlobalSquads = {
         { categories.AIR * categories.MOBILE * categories.ANTIAIR * ( categories.TECH1 + categories.TECH2 + categories.TECH3 ) - categories.BOMBER - categories.GROUNDATTACK - categories.TRANSPORTFOCUS - categories.EXPERIMENTAL, 3, 100, 'Attack', 'none' },
@@ -12,7 +12,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate {
-    Name = 'RNGAI AntiAirLockdown',
+    Name = 'TechAI AntiAirLockdown',
     Plan = 'AirHuntAI',
     GlobalSquads = {
         { categories.AIR * categories.MOBILE * categories.ANTIAIR * ( categories.TECH1 + categories.TECH2 + categories.TECH3 ) - categories.BOMBER - categories.GROUNDATTACK - categories.TRANSPORTFOCUS - categories.EXPERIMENTAL, 3, 100, 'Attack', 'none' },
@@ -21,7 +21,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate {
-    Name = 'RNGAI AirScoutForm',
+    Name = 'TechAI AirScoutForm',
     Plan = 'ScoutingAIRNG',
     GlobalSquads = {
         { categories.AIR * categories.SCOUT * (categories.TECH1 + categories.TECH3), 1, 4, 'scout', 'None' },
@@ -29,7 +29,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate {
-    Name = 'RNGAI AirScoutSingle',
+    Name = 'TechAI AirScoutSingle',
     Plan = 'ScoutingAIRNG',
     GlobalSquads = {
         { categories.AIR * categories.SCOUT * (categories.TECH1 + categories.TECH3), 1, 1, 'scout', 'None' },
@@ -37,7 +37,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate {
-    Name = 'RNGAI ResponseAttack',
+    Name = 'TechAI ResponseAttack',
     Plan = 'StrikeForceAIRNG',
     GlobalSquads = {
         { categories.MOBILE * categories.AIR *(categories.BOMBER + categories.GROUNDATTACK) - categories.daa0206 - categories.EXPERIMENTAL - categories.TRANSPORTFOCUS, 1, 100, 'Attack', 'NoFormation' },
@@ -45,7 +45,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate {
-    Name = 'RNGAI BomberAttack',
+    Name = 'TechAI BomberAttack',
     Plan = 'StrikeForceAIRNG',
     GlobalSquads = {
         { categories.MOBILE * categories.AIR * categories.BOMBER - categories.EXPERIMENTAL - categories.ANTINAVY - categories.daa0206, 1, 100, 'Attack', 'GrowthFormation' },
@@ -54,7 +54,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate {
-    Name = 'RNGAI GunShipAttack',
+    Name = 'TechAI GunShipAttack',
     Plan = 'StrikeForceAIRNG',
     GlobalSquads = {
         { categories.MOBILE * categories.AIR * categories.GROUNDATTACK - categories.EXPERIMENTAL - categories.ANTINAVY, 1, 100, 'Attack', 'GrowthFormation' },
@@ -63,7 +63,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate {
-    Name = 'RNGAI BomberEnergyAttack',
+    Name = 'TechAI BomberEnergyAttack',
     Plan = 'StrikeForceAIRNG',
     GlobalSquads = {
         { categories.MOBILE * categories.AIR * categories.BOMBER - categories.EXPERIMENTAL - categories.ANTINAVY - categories.daa0206, 1, 5, 'Attack', 'GrowthFormation' },
@@ -72,7 +72,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate {
-    Name = 'RNGAI MercyAttack',
+    Name = 'TechAI MercyAttack',
     Plan = 'MercyAIRNG',
     GlobalSquads = {
         { categories.daa0206 , 2, 3, 'Attack', 'none' },
@@ -80,7 +80,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate {
-    Name = 'RNGAI TorpBomberAttack',
+    Name = 'TechAI TorpBomberAttack',
     Plan = 'AirHuntAIRNG',
     GlobalSquads = {
         { categories.MOBILE * categories.AIR * categories.ANTINAVY - categories.EXPERIMENTAL, 1, 50, 'Attack', 'GrowthFormation' },
@@ -104,7 +104,7 @@ PlatoonTemplate {
     }
 }
 PlatoonTemplate {
-    Name = 'RNGAIFighterGroup',
+    Name = 'TechAIFighterGroup',
     FactionSquads = {
         UEF = {
             { 'uea0102', 1, 3, 'Attack', 'None' },
@@ -126,7 +126,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate {
-    Name = 'RNGAIFighterGroupT2',
+    Name = 'TechAIFighterGroupT2',
     FactionSquads = {
         UEF = {
             { 'uea0102', 1, 3, 'Attack', 'None' }, -- T1 Fighter
@@ -147,7 +147,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate {
-    Name = 'RNGAIT1AirQueue',
+    Name = 'TechAIT1AirQueue',
     FactionSquads = {
         UEF = {
             { 'uea0102', 1, 1, 'Attack', 'GrowthFormation' }, -- T1 Fighter
@@ -171,7 +171,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate {
-    Name = 'RNGAIT2AirQueue',
+    Name = 'TechAIT2AirQueue',
     FactionSquads = {
         UEF = {
             { 'dea0202', 1, 2, 'Attack', 'None' }, -- FighterBomber
@@ -193,7 +193,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate {
-    Name = 'RNGAIT2FighterAeon',
+    Name = 'TechAIT2FighterAeon',
     FactionSquads = {
         UEF = {
             { 'dea0202', 1, 1, 'Attack', 'None' },
@@ -210,7 +210,7 @@ PlatoonTemplate {
     },
 }
 
-PlatoonTemplate { Name = 'RNGAIT3AirResponse',
+PlatoonTemplate { Name = 'TechAIT3AirResponse',
     FactionSquads = {
         UEF = {
             { 'uea0303', 1, 3, 'Attack', 'none' },      -- Air Superiority Fighter
@@ -232,7 +232,7 @@ PlatoonTemplate { Name = 'RNGAIT3AirResponse',
 }
 
 PlatoonTemplate { 
-    Name = 'RNGAIT3AirQueue',
+    Name = 'TechAIT3AirQueue',
     FactionSquads = {
         UEF = {
             { 'uea0302', 1, 1, 'Attack', 'none' },      -- Scout
@@ -272,7 +272,7 @@ PlatoonTemplate {
 }
 
 PlatoonTemplate { 
-    Name = 'RNGAIT3AirAttackQueue',
+    Name = 'TechAIT3AirAttackQueue',
     FactionSquads = {
         UEF = {
             { 'uea0302', 1, 1, 'Attack', 'none' },      -- Scout

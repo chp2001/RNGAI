@@ -5,14 +5,14 @@
         Responsible for defining a mapping from AIBuilders keys -> Plans (Plans === platoon.lua functions)
 ]]
 PlatoonTemplate {
-    Name = 'T1EngineerFinishRNGTech',
+    Name = 'T1EngineerFinishTechAI',
     Plan = 'FinishStructurePriorityAIRNG',
     GlobalSquads = {
         { categories.ENGINEER * categories.TECH1, 1, 1, 'support', 'None' }
     },
 }
 PlatoonTemplate {
-    Name = 'RNGTECH LandAttack Spam Intelli',
+    Name = 'TechAI LandAttack Spam Intelli',
     Plan = 'TruePlatoonRNG', -- The platoon function to use.
     GlobalSquads = {
         { categories.MOBILE * categories.LAND * categories.DIRECTFIRE * (categories.TECH1 + categories.TECH2 + categories.TECH3) - categories.ANTIAIR - categories.SCOUT - categories.EXPERIMENTAL - categories.ENGINEER - (categories.SNIPER + categories.xel0305 + categories.xal0305 + categories.xrl0305 + categories.xsl0305 + categories.drl0204 + categories.del0204), -- Type of units.
@@ -31,7 +31,7 @@ PlatoonTemplate {
     },
 }
 PlatoonTemplate {
-    Name = 'RNGTECH Hero T3',
+    Name = 'TechAI Hero T3',
     Plan = 'TruePlatoonRNG', -- The platoon function to use.
     GlobalSquads = {
         {  categories.ual0303 + categories.uel0303 + categories.url0303 + categories.xsl0303, -- Type of units.
@@ -42,7 +42,7 @@ PlatoonTemplate {
     },
 }
 PlatoonTemplate {
-    Name = 'RNGTECH Hero Sniper',
+    Name = 'TechAI Hero Sniper',
     Plan = 'TruePlatoonRNG', -- The platoon function to use.
     GlobalSquads = {
         { categories.SNIPER * categories.LAND + categories.xel0305 + categories.xal0305 + categories.xrl0305 + categories.xsl0305 + categories.drl0204 + categories.del0204, -- Type of units.
@@ -53,7 +53,7 @@ PlatoonTemplate {
     },
 }
 PlatoonTemplate {
-    Name = 'RNGTECH Early Hero T1',
+    Name = 'TechAI Early Hero T1',
     Plan = 'TrueHeroRNG', -- The platoon function to use.
     GlobalSquads = {
         { categories.MOBILE * categories.LAND * (categories.TECH1) * categories.DIRECTFIRE - categories.ANTIAIR - categories.SCOUT - categories.EXPERIMENTAL - categories.ENGINEER - categories.SILO, -- Type of units.
@@ -64,7 +64,7 @@ PlatoonTemplate {
     },
 }
 PlatoonTemplate {
-    Name = 'RNGTECH Arty Hero T1',
+    Name = 'TechAI Arty Hero T1',
     Plan = 'TrueHeroRNG', -- The platoon function to use.
     GlobalSquads = {
         { categories.MOBILE * categories.LAND * (categories.TECH1) * categories.INDIRECTFIRE - categories.ANTIAIR - categories.SCOUT - categories.EXPERIMENTAL - categories.ENGINEER - categories.SILO, -- Type of units.
@@ -75,7 +75,7 @@ PlatoonTemplate {
     },
 }
 PlatoonTemplate {
-    Name = 'RNGTECH Early Hero T2',
+    Name = 'TechAI Early Hero T2',
     Plan = 'TruePlatoonRNG', -- The platoon function to use.
     GlobalSquads = {
         { categories.MOBILE * categories.LAND * (categories.TECH2) * categories.DIRECTFIRE - categories.ANTIAIR - categories.SCOUT - categories.EXPERIMENTAL - categories.ENGINEER - categories.SILO, -- Type of units.
@@ -85,7 +85,7 @@ PlatoonTemplate {
           'None' }, -- platoon move formations: 'None', 'AttackFormation', 'GrowthFormation',
     },
 }
-PlatoonTemplate { Name = 'RNGTECHEarlyExpandEngineers',
+PlatoonTemplate { Name = 'TechAIEarlyExpandEngineers',
     FactionSquads = {
         UEF = {
             { 'uel0105', 1, 3, 'support', 'None' },     -- Engineer
@@ -106,7 +106,7 @@ PlatoonTemplate { Name = 'RNGTECHEarlyExpandEngineers',
     }
 }
 
-PlatoonTemplate { Name = 'RNGTECHT1InitialAttackBuild10k',
+PlatoonTemplate { Name = 'TechAIT1InitialAttackBuild10k',
     FactionSquads = {
         UEF = {
             { 'uel0105', 1, 1, 'support', 'None' },     -- Engineer
@@ -172,7 +172,7 @@ PlatoonTemplate { Name = 'RNGTECHT1InitialAttackBuild10k',
     }
 }
 
-PlatoonTemplate { Name = 'RNGTECHT1LandAttackQueue',
+PlatoonTemplate { Name = 'TechAIT1LandAttackQueue',
     FactionSquads = {
         UEF = {
             { 'uel0101', 1, 1, 'Scout', 'none' },		-- Land Scout
@@ -218,7 +218,7 @@ PlatoonTemplate { Name = 'RNGTECHT1LandAttackQueue',
     }
 }
 
-PlatoonTemplate { Name = 'RNGTECHT2LandAttackQueue',
+PlatoonTemplate { Name = 'TechAIT2LandAttackQueue',
     FactionSquads = {
         UEF = {
             { 'uel0202', 2, 3, 'Attack', 'none' },       -- Heavy Tank
@@ -280,7 +280,7 @@ PlatoonTemplate { Name = 'RNGTECHT2LandAttackQueue',
     }
 }
 
-PlatoonTemplate { Name = 'RNGTECHT3LandAttackQueue',
+PlatoonTemplate { Name = 'TechAIT3LandAttackQueue',
     FactionSquads = {
         UEF = {
             { 'xel0305', 1, 5, 'Attack', 'none' },      -- Armored Assault Bot

@@ -1,4 +1,4 @@
-# RNGAI
+# TechAI
 
 This is an AI for Forged Alliance Forever.
 

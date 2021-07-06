@@ -1,11 +1,11 @@
-name = "RNGAI"
-uid = "faf0863e-9577-ba0d-8269-8d82b622f1c0"
+name = "TechAI"
+uid = "aaa0863e-9577-ba0d-6969-8d82b622f1c0"
 version = 89
 copyright = "2020 relentless"
-description = "RNG Standard AI. Requires Uveso AI to be installed and enabled. Not recommended to have any other sim mods enabled. For best experience all host game settings should be default. Recommended to set AI Map Marker Generator to Autogenerate Always in AI host game settings, recommend setting AI Naval Expansion Limit to zero on land maps and default on naval maps. Best played with OMNI cheat disabled. Updated often so check your versions when using in multiplayer to avoid desyncs."
-author = "relentless"
+description = "TechAI AI. Requires Uveso AI to be installed and enabled. Not recommended to have any other sim mods enabled. For best experience all host game settings should be default. Recommended to set AI Map Marker Generator to Autogenerate Always in AI host game settings, recommend setting AI Naval Expansion Limit to zero on land maps and default on naval maps. Best played with OMNI cheat disabled. Updated often so check your versions when using in multiplayer to avoid desyncs."
+author = "relentless,chp2001,softles"
 url = ""
-icon = "/mods/RNGAI/icon.jpg"
+icon = "/mods/TechAI/icon.jpg"
 selectable = true
 enabled = true
 exclusive = false

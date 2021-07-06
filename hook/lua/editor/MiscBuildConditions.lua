@@ -1,4 +1,4 @@
-local RUtils = import('/mods/RNGAI/lua/AI/RNGUtilities.lua')
+local RUtils = import('/mods/TechAI/lua/AI/RNGUtilities.lua')
 local RNGSORT = table.sort
 
 

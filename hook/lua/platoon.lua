@@ -1,6 +1,6 @@
-WARN('['..string.gsub(debug.getinfo(1).source, ".*\\(.*.lua)", "%1")..', line:'..debug.getinfo(1).currentline..'] * RNGAI: offset platoon.lua' )
+WARN('['..string.gsub(debug.getinfo(1).source, ".*\\(.*.lua)", "%1")..', line:'..debug.getinfo(1).currentline..'] * TechAI: offset platoon.lua' )
 
-local RUtils = import('/mods/RNGAI/lua/AI/RNGUtilities.lua')
+local RUtils = import('/mods/TechAI/lua/AI/RNGUtilities.lua')
 local MABC = import('/lua/editor/MarkerBuildConditions.lua')
 local AIUtils = import('/lua/ai/aiutilities.lua')
 local AIAttackUtils = import('/lua/AI/aiattackutilities.lua')
@@ -15,8 +15,8 @@ local GetUnitsAroundPoint = moho.aibrain_methods.GetUnitsAroundPoint
 local GetThreatAtPosition = moho.aibrain_methods.GetThreatAtPosition
 local GetEconomyStored = moho.aibrain_methods.GetEconomyStored
 
-RNGAIPlatoon = Platoon
-Platoon = Class(RNGAIPlatoon) {
+TechAIPlatoon = Platoon
+Platoon = Class(TechAIPlatoon) {
 
     AirHuntAIRNG = function(self)
         self:Stop()
@@ -617,7 +617,7 @@ Platoon = Class(RNGAIPlatoon) {
         if eng then
             --LOG('* AI-RNG: Engineer Condition is true')
             eng.UnitBeingBuilt = eng -- this is important, per uveso (It's a build order fake, i assigned the engineer to itself so it will not produce errors because UnitBeingBuilt must be a unit and can not just be set to true)
-            RUtils.ReclaimRNGAIThread(self,eng,aiBrain)
+            RUtils.ReclaimTechAIThread(self,eng,aiBrain)
             eng.UnitBeingBuilt = nil
         else
             --LOG('* AI-RNG: Engineer Condition is false')
@@ -1005,12 +1005,6 @@ Platoon = Class(RNGAIPlatoon) {
             end
         end
         while PlatoonExists(aiBrain, self) do
-            if aiBrain.EnemyIntel.ACUEnemyClose then
-                --LOG('HuntAI Enemy ACU Close, setting attack priority')
-                target = self:FindClosestUnit('Attack', 'Enemy', true, categories.MOBILE * categories.COMMAND)
-            else
-                target = self:FindClosestUnit('Attack', 'Enemy', true, categories.ALLUNITS - categories.AIR - categories.SCOUT - categories.WALL - categories.NAVAL)
-            end
             if target then
                 local threatAroundplatoon = 0
                 local targetPosition = target:GetPosition()
@@ -2664,8 +2658,12 @@ Platoon = Class(RNGAIPlatoon) {
         if not unit.PlatoonHandle.PlanName == 'EngineerBuildAIRNG' then return end
         --LOG("*AI DEBUG: Build done " .. unit.Sync.id)
         if not unit.ProcessBuild then
-            unit.ProcessBuild = unit:ForkThread(unit.PlatoonHandle.ProcessBuildCommandRNG, true)
-            unit.ProcessBuildDone = true
+            if unit.UnitBeingBuilt and unit.UnitBeingBuilt:GetFractionComplete()<1 then
+                unit.ProcessBuild = unit:ForkThread(unit.PlatoonHandle.ProcessBuildCommandRNG, false)
+            else
+                unit.ProcessBuild = unit:ForkThread(unit.PlatoonHandle.ProcessBuildCommandRNG, true)
+                unit.ProcessBuildDone = true
+            end
         end
     end,
     EngineerCaptureDoneRNG = function(unit, params)
@@ -2913,7 +2911,7 @@ Platoon = Class(RNGAIPlatoon) {
         end
 
         eng.NotBuildingThread = nil
-        if not eng.Dead and eng:IsIdleState() and table.getn(eng.EngineerBuildQueue) != 0 and eng.PlatoonHandle and not eng.WaitingForTransport then
+        if not eng.Dead and eng:IsIdleState() and table.getn(eng.EngineerBuildQueue) != 0 and eng.PlatoonHandle and not eng.WaitingForTransport and not (table.getn(v:GetCommandQueue()) > 0) then
             eng.PlatoonHandle.SetupEngineerCallbacksRNG(eng)
             if not eng.ProcessBuild then
                 --LOG('Forking Process Build Command with table remove')
@@ -3699,7 +3697,7 @@ Platoon = Class(RNGAIPlatoon) {
                     local platoonPos = GetPlatoonPosition(self)
                     if platoonPos and not self.DistressCall then
                         -- Find a distress location within the platoons range
-                        local distressLocation = aiBrain:BaseMonitorDistressLocationRNG(platoonPos, distressRange, threatThreshold)
+                        local distressLocation = nil
                         local moveLocation
 
                         -- We found a location within our range! Activate!
@@ -3732,7 +3730,7 @@ Platoon = Class(RNGAIPlatoon) {
                                 platoonPos = GetPlatoonPosition(self)
                                 if platoonPos then
                                     -- Now that we have helped the first location, see if any other location needs the help
-                                    distressLocation = aiBrain:BaseMonitorDistressLocationRNG(platoonPos, distressRange)
+                                    distressLocation = nil
                                     if distressLocation then
                                         self:SetPlatoonFormationOverride('NoFormation')
                                         self:AggressiveMoveToLocation(distressLocation)
@@ -3761,7 +3759,7 @@ Platoon = Class(RNGAIPlatoon) {
                 local threat = GetThreatAtPosition(aiBrain, pos, 0, true, 'Land')
                 --LOG('Threat at Extractor :'..threat)
                 if threat and threat > 1 then
-                    LOG('*RNGAI Mass Extractor Platoon Calling for help')
+                    LOG('*TechAI Mass Extractor Platoon Calling for help')
                     aiBrain:BaseMonitorPlatoonDistressRNG(self, threat)
                     self.DistressCall = true
                     aiBrain:AddScoutArea(pos)
@@ -3784,7 +3782,7 @@ Platoon = Class(RNGAIPlatoon) {
                     local position = locData.EngineerManager.Location
                     local radius = locData.EngineerManager.Radius
                     local distressRange = locData.BaseSettings.DistressRange or aiBrain.BaseMonitor.PoolDistressRange
-                    local distressLocation = aiBrain:BaseMonitorDistressLocationRNG(position, distressRange, aiBrain.BaseMonitor.PoolDistressThreshold)
+                    local distressLocation = nil
 
                     -- Distress !
                     if distressLocation then
@@ -3903,7 +3901,7 @@ Platoon = Class(RNGAIPlatoon) {
                 table.insert(MoveToCategories, v )
             end
         else
-            --LOG('* RNGAI: * SACUATTACKAIRNG: MoveToCategories missing in platoon '..self.BuilderName)
+            --LOG('* TechAI: * SACUATTACKAIRNG: MoveToCategories missing in platoon '..self.BuilderName)
         end
         local WeaponTargetCategories = {}
         if self.PlatoonData.WeaponTargetCategories then
@@ -4397,8 +4395,8 @@ Platoon = Class(RNGAIPlatoon) {
     --[[-- For Debugging
     PlatoonDisband = function(self)
         local aiBrain = self:GetBrain()
-        if not aiBrain.RNG then
-            return RNGAIPlatoon.PlatoonDisband(self)
+        if not aiBrain.TechAI then
+            return TechAIPlatoon.PlatoonDisband(self)
         end
         WARN('* AI-RNG: PlatoonDisband: PlanName '..repr(self.PlanName)..'  -  BuilderName: '..repr(self.BuilderName)..'.' )
         if not self.PlanName or not self.BuilderName then
@@ -4411,7 +4409,7 @@ Platoon = Class(RNGAIPlatoon) {
             WARN('* AI-RNG: PlatoonDisband: Called from '..FuncData.source..' - line: '..FuncData.currentline.. '  -  (Offset AI-RNG: ['..(FuncData.currentline - 6543)..'])')
         end
         if aiBrain:PlatoonExists(self) then
-            RNGAIPlatoon.PlatoonDisband(self)
+            TechAIPlatoon.PlatoonDisband(self)
         end
     end,]]
 
@@ -5112,12 +5110,6 @@ Platoon = Class(RNGAIPlatoon) {
                 end
         end
         while PlatoonExists(aiBrain, self) do
-            if aiBrain.EnemyIntel.ACUEnemyClose then
-                --LOG('HuntAI Enemy ACU Close, setting attack priority')
-                target = self:FindClosestUnit('Attack', 'Enemy', true, categories.MOBILE * categories.COMMAND)
-            else
-                target = self:FindClosestUnit('Attack', 'Enemy', true, categories.ALLUNITS - categories.AIR - categories.SCOUT - categories.WALL - categories.NAVAL)
-            end
             if target then
                 local threatAroundplatoon = 0
                 local platoonThreat = self:CalculatePlatoonThreat('AntiSurface', categories.ALLUNITS) * Hero.MaxWeaponRange/18
@@ -5330,12 +5322,6 @@ Platoon = Class(RNGAIPlatoon) {
                 end
         end
         while PlatoonExists(aiBrain, self) do
-            if aiBrain.EnemyIntel.ACUEnemyClose then
-                --LOG('HuntAI Enemy ACU Close, setting attack priority')
-                target = self:FindClosestUnit('Attack', 'Enemy', true, categories.MOBILE * categories.COMMAND)
-            else
-                target = self:FindClosestUnit('Attack', 'Enemy', true, categories.ALLUNITS - categories.AIR - categories.SCOUT - categories.WALL - categories.NAVAL)
-            end
             if target then
                 local threatAroundplatoon = 0
                 local platoonThreat = self:CalculatePlatoonThreat('AntiSurface', categories.ALLUNITS)
@@ -7475,6 +7461,29 @@ Platoon = Class(RNGAIPlatoon) {
     end,
     RenderBuildQueue = function(aiBrain,eng)
         LOG('renderbuildqueue starting')
+        local function EngineerTemporaryCircleRender(eng,pos,color,rad)
+            for _=0,10 do
+                for _=0,5 do
+                    DrawCircle(pos,rad or 5,color)
+                    WaitTicks(2)
+                end
+                WaitTicks(5)
+            end
+        end
+        local function EngineerTemporaryLineRender(eng,pos,color,pos2)
+            if not pos2 then
+                for _=0,25 do
+                    if not eng or eng.Dead then return end
+                    DrawLinePop(eng:GetPosition(),pos,color)
+                    WaitTicks(2)
+                end
+            else
+                for _=0,25 do
+                    DrawLinePop(pos,pos2,color)
+                    WaitTicks(2)
+                end
+            end
+        end
         if eng.renderbuildqueue then return end
         eng.renderbuildqueue=true
         WaitTicks(3)
@@ -7503,9 +7512,9 @@ Platoon = Class(RNGAIPlatoon) {
             end
             for i,v in eng.EngineerBuildQueue do
                 if i==1 then
-                    ForkThread(eng.PlatoonHandle.EngineerTemporaryLineRender,eng,normalposition(v[2]),'da4CFF00')
+                    ForkThread(EngineerTemporaryLineRender,eng,normalposition(v[2]),'da4CFF00')
                 else
-                    ForkThread(eng.PlatoonHandle.EngineerTemporaryLineRender,eng,normalposition(eng.EngineerBuildQueue[i-1][2]),'aa4CFF00',normalposition(v[2]))
+                    ForkThread(EngineerTemporaryLineRender,eng,normalposition(eng.EngineerBuildQueue[i-1][2]),'aa4CFF00',normalposition(v[2]))
                 end
                 ForkThread(RNGtemporaryrenderbuildsquare,v[2],aiBrain:GetUnitBlueprint(v[1]).Physics.SkirtSizeX,aiBrain:GetUnitBlueprint(v[1]).Physics.SkirtSizeZ)
             end

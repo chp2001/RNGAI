@@ -1,12 +1,12 @@
-WARN('['..string.gsub(debug.getinfo(1).source, ".*\\(.*.lua)", "%1")..', line:'..debug.getinfo(1).currentline..'] * RNGAI: offset aibuildstructures.lua' )
+WARN('['..string.gsub(debug.getinfo(1).source, ".*\\(.*.lua)", "%1")..', line:'..debug.getinfo(1).currentline..'] * TechAI: offset aibuildstructures.lua' )
 
-local RUtils = import('/mods/RNGAI/lua/AI/RNGUtilities.lua')
+local RUtils = import('/mods/TechAI/lua/AI/RNGUtilities.lua')
 local AIUtils = import('/lua/ai/aiutilities.lua')
 local GetNumUnitsAroundPoint = moho.aibrain_methods.GetNumUnitsAroundPoint
 
 RNGAddToBuildQueue = AddToBuildQueue
 function AddToBuildQueue(aiBrain, builder, whatToBuild, buildLocation, relative)
-    if not aiBrain.RNG then
+    if not aiBrain.TechAI then
         return RNGAddToBuildQueue(aiBrain, builder, whatToBuild, buildLocation, relative)
     end
     if not builder.EngineerBuildQueue then

@@ -1,5 +1,5 @@
 local GetThreatAtPosition = moho.aibrain_methods.GetThreatAtPosition
-local RUtils = import('/mods/RNGAI/lua/AI/RNGUtilities.lua')
+local RUtils = import('/mods/TechAI/lua/AI/RNGUtilities.lua')
 local MABC = import('/lua/editor/MarkerBuildConditions.lua')
 local AIAttackUtils = import('/lua/AI/aiattackutilities.lua')
 function AIGetMarkerLocationsNotFriendly(aiBrain, markerType)

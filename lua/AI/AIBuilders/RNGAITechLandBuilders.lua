@@ -1,10 +1,10 @@
 --[[
-    File    :   /lua/AI/AIBaseTemplates/RNGAI MainBase Standard.lua
+    File    :   /lua/AI/AIBaseTemplates/TechAI MainBase Standard.lua
     Author  :   relentless
     Summary :
         Land Builders
 ]]
-local BaseRestrictedArea, BaseMilitaryArea, BaseDMZArea, BaseEnemyArea = import('/mods/RNGAI/lua/AI/RNGUtilities.lua').GetMOARadii()
+local BaseRestrictedArea, BaseMilitaryArea, BaseDMZArea, BaseEnemyArea = import('/mods/TechAI/lua/AI/RNGUtilities.lua').GetMOARadii()
 LOG('* AI-RNG: BaseRestricted :'..BaseRestrictedArea..' BaseMilitary :'..BaseMilitaryArea..' BaseDMZArea :'..BaseDMZArea..' BaseEnemy :'..BaseEnemyArea)
 local UCBC = '/lua/editor/UnitCountBuildConditions.lua'
 local MIBC = '/lua/editor/MiscBuildConditions.lua'
@@ -132,11 +132,11 @@ local NoSmallFrys = function (self, aiBrain)
     end
 end
 BuilderGroup {
-    BuilderGroupName = 'RNG Tech T3 Land Builder Small',
+    BuilderGroupName = 'TechAI T3 Land Builder Small',
     BuildersType = 'FactoryBuilder',
     Builder {
-        BuilderName = 'RNG Tech Factory Heavy T3 Land Queue',
-        PlatoonTemplate = 'RNGTECHT3LandAttackQueue',
+        BuilderName = 'TechAI Factory Heavy T3 Land Queue',
+        PlatoonTemplate = 'TechAIT3LandAttackQueue',
         Priority = 840, -- After Second Engie Group
         BuilderConditions = {
             { UCBC, 'HaveLessThanUnitsWithCategory', { 20, categories.LAND * categories.MOBILE * categories.DIRECTFIRE * categories.TECH3 - categories.ENGINEER }},
@@ -149,11 +149,11 @@ BuilderGroup {
 -- Land Formers
 
 BuilderGroup {
-    BuilderGroupName = 'RNG Tech Hero FormBuilders',                           -- BuilderGroupName, initalized from AIBaseTemplates in "\lua\AI\AIBaseTemplates\"
+    BuilderGroupName = 'TechAI Hero FormBuilders',                           -- BuilderGroupName, initalized from AIBaseTemplates in "\lua\AI\AIBaseTemplates\"
     BuildersType = 'PlatoonFormBuilder',                                        -- BuilderTypes are: EngineerBuilder, FactoryBuilder, PlatoonFormBuilder.
     Builder {
-        BuilderName = 'RNG Tech Spam Early',                              -- Random Builder Name.
-        PlatoonTemplate = 'RNGTECH LandAttack Spam Intelli',                          -- Template Name. 
+        BuilderName = 'TechAI Spam Early',                              -- Random Builder Name.
+        PlatoonTemplate = 'TechAI LandAttack Spam Intelli',                          -- Template Name. 
         Priority = 800,                                                          -- Priority. 1000 is normal.
         InstanceCount = 400,                                                      -- Number of platoons that will be formed.
         BuilderType = 'Any',
@@ -166,8 +166,8 @@ BuilderGroup {
             },
     },
     Builder {
-        BuilderName = 'RNG Tech Hero T3',                              -- Random Builder Name.
-        PlatoonTemplate = 'RNGTECH Hero T3',                          -- Template Name. 
+        BuilderName = 'TechAI Hero T3',                              -- Random Builder Name.
+        PlatoonTemplate = 'TechAI Hero T3',                          -- Template Name. 
         Priority = 1300,                                                          -- Priority. 1000 is normal.
         --PlatoonAddPlans = { 'HighlightHero' },
         --PlatoonAddPlans = { 'HighlightTrueHero' },
@@ -182,8 +182,8 @@ BuilderGroup {
         },
     },
     Builder {
-        BuilderName = 'RNG Tech Hero Sniper',                              -- Random Builder Name.
-        PlatoonTemplate = 'RNGTECH Hero Sniper',                          -- Template Name. 
+        BuilderName = 'TechAI Hero Sniper',                              -- Random Builder Name.
+        PlatoonTemplate = 'TechAI Hero Sniper',                          -- Template Name. 
         Priority = 1300,                                                          -- Priority. 1000 is normal.
         --PlatoonAddPlans = { 'HighlightHero' },
         --PlatoonAddPlans = { 'HighlightTrueHero' },
@@ -198,8 +198,8 @@ BuilderGroup {
         },
     },
     Builder {
-        BuilderName = 'RNG Tech Early Hero T1',                              -- Random Builder Name.
-        PlatoonTemplate = 'RNGTECH Early Hero T1',                          -- Template Name. 
+        BuilderName = 'TechAI Early Hero T1',                              -- Random Builder Name.
+        PlatoonTemplate = 'TechAI Early Hero T1',                          -- Template Name. 
         Priority = 1200,                                                          -- Priority. 1000 is normal.
         --PlatoonAddPlans = { 'HighlightHero' },
         PlatoonAddPlans = { 'HighlightTrueHero' },
@@ -215,8 +215,8 @@ BuilderGroup {
         },
     },
     Builder {
-        BuilderName = 'RNG Tech Arty Hero T1',                              -- Random Builder Name.
-        PlatoonTemplate = 'RNGTECH Arty Hero T1',                          -- Template Name. 
+        BuilderName = 'TechAI Arty Hero T1',                              -- Random Builder Name.
+        PlatoonTemplate = 'TechAI Arty Hero T1',                          -- Template Name. 
         Priority = 1200,                                                          -- Priority. 1000 is normal.
         --PlatoonAddPlans = { 'HighlightHero' },
         PlatoonAddPlans = { 'HighlightTrueHero' },
