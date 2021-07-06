@@ -2248,7 +2248,7 @@ end
 
 MexAllocateRNG = function(aiBrain,mex,allyBrains)
     LOG('start construct mex')
-    if mex:IsUnitState('Upgrading') then return false end
+    if not mex or mex.Dead or mex:IsUnitState('Upgrading') then return false end
     local starts = {}
     local aiBrainIndex = aiBrain:GetArmyIndex()
     LOG('aiBrain index'..aiBrainIndex)
@@ -3107,6 +3107,7 @@ GetAvgSpendPerFactoryTypeRNG = function(aiBrain)
         local ucount={Land=0,Air=0,Naval=0}
         local factories=aiBrain:GetListOfUnits(categories.FACTORY * categories.STRUCTURE,false,false)
         for _,unit in factories do
+            if not unit or unit.Dead then continue end
             if unit:IsIdleState() then continue end
             local spendm=GetConsumptionPerSecondMass(unit)
             if spendm==0 then continue end
@@ -3429,7 +3430,8 @@ function MexUpgradeManagerRNG(aiBrain)
         local mexes={}
         for i,v in mexes1 do
             --if not v.UCost then
-            if v:IsUnitState('Upgrading') and v.UCost then currentupgradecost=currentupgradecost+v.UCost table.remove(mexes,i) continue end
+            if not v or v.Dead then continue end
+            if v:IsUnitState('Upgrading') and v.UCost then currentupgradecost=currentupgradecost+v.UCost table.remove(mexes1,i) continue end
             local spende=GetConsumptionPerSecondEnergy(v)
             local producem=GetProductionPerSecondMass(v)
             local unit=v:GetBlueprint()
@@ -3944,6 +3946,7 @@ function DoExpandSpotDistanceInfect(aiBrain,marker,expand)
     end
 end
 function CanGraphToRNGArea(unit, destPos, layer)
+    if not unit then return false end
     local position = unit:GetPosition()
     local startNode = Scenario.MasterChain._MASTERCHAIN_.Markers[AIAttackUtils.GetClosestPathNodeInRadiusByLayer(position,30,layer).name]
     local endNode = false

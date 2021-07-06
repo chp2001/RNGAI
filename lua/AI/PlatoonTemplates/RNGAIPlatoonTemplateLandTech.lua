@@ -13,7 +13,7 @@ PlatoonTemplate {
 }
 PlatoonTemplate {
     Name = 'RNGTECH LandAttack Spam Intelli',
-    Plan = 'TruePlatoonRNG', -- The platoon function to use.
+    Plan = 'TruePlatoonRedoRNG', -- The platoon function to use.
     GlobalSquads = {
         { categories.MOBILE * categories.LAND * categories.DIRECTFIRE * (categories.TECH1 + categories.TECH2 + categories.TECH3) - categories.ANTIAIR - categories.SCOUT - categories.EXPERIMENTAL - categories.ENGINEER - (categories.SNIPER + categories.xel0305 + categories.xal0305 + categories.xrl0305 + categories.xsl0305 + categories.drl0204 + categories.del0204), -- Type of units.
           3, -- Min number of units.
@@ -32,7 +32,7 @@ PlatoonTemplate {
 }
 PlatoonTemplate {
     Name = 'RNGTECH Hero T3',
-    Plan = 'TruePlatoonRNG', -- The platoon function to use.
+    Plan = 'TruePlatoonRedoRNG', -- The platoon function to use.
     GlobalSquads = {
         {  categories.ual0303 + categories.uel0303 + categories.url0303 + categories.xsl0303, -- Type of units.
           3, -- Min number of units.
@@ -43,7 +43,7 @@ PlatoonTemplate {
 }
 PlatoonTemplate {
     Name = 'RNGTECH Hero Sniper',
-    Plan = 'TruePlatoonRNG', -- The platoon function to use.
+    Plan = 'TruePlatoonRedoRNG', -- The platoon function to use.
     GlobalSquads = {
         { categories.SNIPER * categories.LAND + categories.xel0305 + categories.xal0305 + categories.xrl0305 + categories.xsl0305 + categories.drl0204 + categories.del0204, -- Type of units.
           3, -- Min number of units.
@@ -76,7 +76,7 @@ PlatoonTemplate {
 }
 PlatoonTemplate {
     Name = 'RNGTECH Early Hero T2',
-    Plan = 'TruePlatoonRNG', -- The platoon function to use.
+    Plan = 'TruePlatoonRedoRNG', -- The platoon function to use.
     GlobalSquads = {
         { categories.MOBILE * categories.LAND * (categories.TECH2) * categories.DIRECTFIRE - categories.ANTIAIR - categories.SCOUT - categories.EXPERIMENTAL - categories.ENGINEER - categories.SILO, -- Type of units.
           2, -- Min number of units.
