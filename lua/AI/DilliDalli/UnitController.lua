@@ -209,7 +209,7 @@ LandController = Class({
         local foundYet = false
         -- TODO: use layer info
         for _, v in self.brain.intel.zones do
-            if (v.intel.class == "allied") or (v.intel.class == "neutral") or (not MAP:CanPathTo(pos,v.pos,"surf")) then
+            if (v.intel.class == "allied") or (v.intel.class == "neutral") or (not MAP:CanPathTo2(pos,v.pos,"surf")) then
                 continue
             end
             local retreatFound = false
@@ -353,7 +353,7 @@ LandController = Class({
                     local d0 = VDist3(self.brain.intel.allies[1],v.pos)
                     local d1 = VDist3(self.brain.intel.enemies[1],v.pos)
                     local metric = v.weight/(100+math.abs(d0-1.5*d1))
-                    if (not best) or metric > bestMetric then
+                    if (not best) or metric > bestMetric and d0<256 then
                         best = v.pos
                         bestMetric = metric
                     end
@@ -527,6 +527,7 @@ LandGroup = Class({
                     sum[k]=sum[k] + pos[k]/num
                 end
             end
+            num=math.min(num,30)
             local loc1=crossp(sum,location,-num/VDist3(sum,location))
             local loc2=crossp(sum,location,num/VDist3(sum,location))
             for i,v in unitgroup do
@@ -651,17 +652,21 @@ LandGroup = Class({
         local function SimpleTarget(self,aiBrain)
             local function ViableTargetCheck(unit)
                 if unit.Dead or not unit then return false end
+                local targetpos=unit:GetPosition()
                 if self.MovementLayer=='Amphibious' then
-                    if RUtils.CanGraphToRNGArea(self.units[1],unit:GetPosition(),self.MovementLayer) then
-                        return true
+                    for _,v in self.units do
+                        if v and not v.Dead then
+                            return MAP:CanPathTo2(self:Position(),targetpos,"surf")
+                        end
                     end
                 else
-                    local targetpos=unit:GetPosition()
                     if GetTerrainHeight(targetpos[1],targetpos[3])<GetSurfaceHeight(targetpos[1],targetpos[3]) then
                         return false
                     else
-                        if RUtils.CanGraphToRNGArea(self.units[1],targetpos,self.MovementLayer) then
-                            return true
+                        for _,v in self.units do
+                            if v and not v.Dead then
+                                return MAP:CanPathTo2(self:Position(),targetpos,"surf")
+                            end
                         end
                     end
                 end
@@ -669,9 +674,14 @@ LandGroup = Class({
             local platoon=self
             local id=platoon.chpdata.id
             local position=self:Position()
-            platoon.targetcandidates=aiBrain:GetUnitsAroundPoint(categories.LAND + categories.STRUCTURE, position, self.MaxWeaponRange+10, 'Enemy')
+            local targets=aiBrain:GetUnitsAroundPoint(categories.LAND + categories.STRUCTURE, position, self.MaxWeaponRange+10, 'Enemy')
+            platoon.targetcandidates={}
             for i,unit in platoon.targetcandidates do
-                if not ViableTargetCheck(unit) then table.remove(platoon.targetcandidates,i) continue end
+                if ViableTargetCheck(unit) then 
+                    table.insert(platoon.targetcandidates,unit) 
+                else
+                    continue
+                end
                 if not unit.chppriority then unit.chppriority={} unit.chpdistance={} end
                 if not unit.dangerupdate or GetGameTimeSeconds()-unit.dangerupdate>10 then
                     unit.chpdanger=math.max(10,RUtils.GrabPosDangerRNG(aiBrain,unit:GetPosition(),30).enemy)
@@ -777,6 +787,9 @@ LandGroup = Class({
             end
             if self.attacking and SimpleTarget(self,aiBrain) then
                 self.forcekiting=true
+                SimpleCombat(self,aiBrain)
+            elseif SimpleTarget(self,aiBrain) then
+                self.forcekiting=false
                 SimpleCombat(self,aiBrain)
             else
                 self.forcekiting=false

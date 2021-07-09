@@ -119,6 +119,7 @@ ArmyMonitor = Class({
                 count = { total = 0, t1 = 0, t2 = 0, t3 = 0, t4 = 0, scout = 0 },
             },
             mex = { t1=0, t2=0, t3=0 },
+            hydro = { t1=0, t2=0, t3=0 },
         }
     end,
 
@@ -239,6 +240,17 @@ ArmyMonitor = Class({
                     self.units.mex.t2 = self.units.mex.t2 + 1
                 elseif EntityCategoryContains(categories.TECH3,unit) then
                     self.units.mex.t3 = self.units.mex.t3 + 1
+                end
+            end
+            
+            local isHydro = EntityCategoryContains(categories.HYDROCARBON,unit)
+            if isHydro then
+                if EntityCategoryContains(categories.TECH1,unit) then
+                    self.units.hydro.t1 = self.units.hydro.t1 + 1
+                elseif EntityCategoryContains(categories.TECH2,unit) then
+                    self.units.hydro.t2 = self.units.hydro.t2 + 1
+                elseif EntityCategoryContains(categories.TECH3,unit) then
+                    self.units.hydro.t3 = self.units.hydro.t3 + 1
                 end
             end
         end

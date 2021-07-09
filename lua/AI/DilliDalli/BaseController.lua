@@ -76,7 +76,47 @@ BaseController = Class({
         table.insert(self.upgradeJobs, { job = job, meta=meta })
         return meta
     end,
-
+    AddCategoryJob = function(self,category,job,data)
+        if not self.categoryjobs then self.categoryjobs={} end
+        if not self.categoryjobs[category] then self.categoryjobs[category]={} end
+        table.insert(self.categoryjobs[category],{job=job,data=data})
+    end,
+    SumCategorySpend = function(self,category,tier)
+        local sum=0
+        for _,job in self.categoryjobs[category] do
+            if job.data.tier==tier then
+                sum=sum+job.job.actualSpend
+            end
+        end
+        return sum
+    end,
+    SumCategoryTarget = function(self,category,tier)
+        local sum=0
+        for _,job in self.categoryjobs[category] do
+            if job.data.tier==tier then
+                sum=sum+job.job.targetSpend
+            end
+        end
+        return sum
+    end,
+    ClearCategoryTarget = function(self,category)
+        for _,job in self.categoryjobs[category] do
+            job.job.targetSpend=0
+        end
+    end,
+    DoCategoryAllocate = function(self,category,tier,cond,amount)
+        local sumpriority=0
+        for _,job in self.categoryjobs[category] do
+            if job.data.condpriority[cond]>0 then
+                sumpriority=sumpriority+job.data.condpriority[cond]
+            end
+        end
+        for _,job in self.categoryjobs[category] do
+            if job.data.condpriority[cond]>0 then
+                job.job.targetSpend=job.data.condpriority[cond]*amount/sumpriority
+            end
+        end
+    end,
     OnCompleteAssist = function(self,jobID,buildRate,thread)
         for _, job in self.mobileJobs do
             if job.meta.id == jobID then
@@ -230,8 +270,10 @@ BaseController = Class({
                     success = TroopFunctions.EngineerBuildMarkedStructure(self.brain,engie,unitID,"Mass")
                 elseif activeJob.job.work == "Hydro" then
                     success = TroopFunctions.EngineerBuildMarkedStructure(self.brain,engie,unitID,"Hydrocarbon")
+                elseif activeJob.job.work == "Unfinished" then
+                    success = TroopFunctions.EngineerFinishStructure(self.brain,engie,job)
                 else
-                    success = TroopFunctions.EngineerBuildStructure(self.brain,engie,unitID)
+                    success = TroopFunctions.EngineerBuildStructure(self.brain,engie,unitID,nil,nil,job)
                 end
                 start = PROFILER:Now()
                 -- Return engie back to the pool
@@ -357,7 +399,7 @@ BaseController = Class({
         local myPos = engie:GetPosition()
         for _, v in job.meta.assigned do
             local theirPos = v.unit:GetPosition()
-            if MAP:CanPathTo(myPos,theirPos,"surf") and VDist3(myPos,theirPos) < self.assistRadius and not v.unit:IsBeingBuilt() then
+            if MAP:CanPathTo2(myPos,theirPos,"surf") and VDist3(myPos,theirPos) < self.assistRadius and not v.unit:IsBeingBuilt() then
                 return { unit = v.unit, thread = v.thread }
             end
         end
@@ -373,13 +415,28 @@ BaseController = Class({
                 return false
             end
         elseif job.job.work == "Hydro" then
-            if not self.brain.intel:FindNearestEmptyMarker(unit:GetPosition(),"Hydrocarbon") then
+            local valid,dist=self.brain.intel:FindNearestEmptyMarker(unit:GetPosition(),"Hydrocarbon")
+            if not valid then
+                return false
+            elseif job.meta.activecount>0 and dist>30 then
+                return false
+            elseif EntityCategoryContains(categories.COMMAND,unit) and dist>20 then
                 return false
             elseif (not EntityCategoryContains(categories.TECH1,unit)) and self.isBOComplete then
                 return false
             end
             -- TODO
-            return false
+            --return false
+        elseif job.job.work == "Unfinished" and EntityCategoryContains(categories.TECH1,unit) and self.isBOComplete then
+            local unfinishedUnits = self.brain.aiBrain:GetUnitsAroundPoint(categories.STRUCTURE, unit:GetPosition(), 20, 'Ally')
+            for k,v in unfinishedUnits do
+                local FractionComplete = v:GetFractionComplete()
+                if FractionComplete < 1 and table.getn(v:GetGuards()) < 1 then
+                    if not v.Dead and not v:BeenDestroyed() then
+                        return true
+                    end
+                end
+            end
         end
         if job.job.priority <= 0 or job.job.count <= 0 or job.job.targetSpend < 0 then
             return false
@@ -402,11 +459,28 @@ BaseController = Class({
             )
         )
     end,
-    CheckPriority = function(self, currentJob, newJob)
+    CheckPriority = function(self, currentJob, newJob, unit)
         -- Return true if the new job should be higher priority than the old job.
         -- Check the old one is actually set yet
         if not currentJob then
             return newJob.job.priority > 0
+        end
+        -- Check for job area and recalculate priority locally
+        local currentPriority = currentJob.job.priority
+        local newPriority = newJob.job.priority
+        if currentJob.job.area=='Base' then
+            if VDist3(self.brain.intel.allies[1],unit:GetPosition())<50 then
+                --currentPriority=currentPriority+100
+            else
+                currentPriority=currentPriority-100
+            end
+        end
+        if newJob.job.area=='Base' then
+            if VDist3(self.brain.intel.allies[1],unit:GetPosition())<50 then
+                --newPriority=newPriority+100
+            else
+                newPriority=newPriority-100
+            end
         end
         -- Check if one is a build order, in which case prioritise it.
         if currentJob.job.buildOrder and not newJob.job.buildOrder then
@@ -436,7 +510,7 @@ BaseController = Class({
         for _, job in jobs do
             -- TODO: Support assitance
             -- TODO: Support location constraints
-            if self:CanDoJob(unit,job) and self:CheckPriority(bestJob,job) then
+            if self:CanDoJob(unit,job) and self:CheckPriority(bestJob,job,unit) then
                 bestJob = job
             end
         end
@@ -502,7 +576,7 @@ BaseController = Class({
         local engies = {}
         for _, v in units do
             if v and not v.Dead and not v.renderbuildqueue then
-                v:ForkThread(RUtils.RenderBuildQueue)
+                ForkThread(RUtils.RenderBuildQueue,v)
             end
             if (not v.CustomData or ((not v.CustomData.excludeAssignment) and (not v.CustomData.isAssigned))) and (not v:IsBeingBuilt()) and (not v.Dead) and not (v.EngineerBuildQueue and table.getn(v.EngineerBuildQueue) > 0) then
                 table.insert(engies,v)

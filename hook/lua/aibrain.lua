@@ -2158,7 +2158,7 @@ AIBrain = Class(TechAIBrainClass) {
             }
         --]]
         while not self.defeat do
-            LOG('heavy economy loop started')
+            --LOG('heavy economy loop started')
             self:HeavyEconomyForkRNG()
             WaitTicks(50)
         end
@@ -2167,7 +2167,7 @@ AIBrain = Class(TechAIBrainClass) {
     HeavyEconomyForkRNG = function(self)
         local units = GetListOfUnits(self, categories.SELECTABLE, true, true)
         local factionIndex = self:GetFactionIndex()
-        LOG('units grabbed')
+        --LOG('units grabbed')
         local factories = {Land={T1=0,T2=0,T3=0},Air={T1=0,T2=0,T3=0},Naval={T1=0,T2=0,T3=0}}
         local extractors = {T1=0,T2=0,T3=0}
         local fabs = {T2=0,T3=0}

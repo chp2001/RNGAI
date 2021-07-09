@@ -74,7 +74,7 @@ ProdProfiler = Class({
 })
 
 function CreateProfiler()
-    local dev = false
+    local dev = true
     if dev then
         local p = Profiler()
         p:Init()

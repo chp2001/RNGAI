@@ -25,7 +25,7 @@ local RNGFLOOR = math.floor
 local RNGCEIL = math.ceil
 local RNGPI = math.pi
 local RNGCAT = table.cat
-function DoAdvancedAdjacency(aiBrain, baseManager, intelManager, blueprint, location, radius)
+function DoAdvancedAdjacency(aiBrain, baseManager, intelManager, blueprint, location, radius, locationBias, job)
     local self=aiBrain
     local function combintoid(set)
         local tab=set
@@ -249,8 +249,12 @@ function DoAdvancedAdjacency(aiBrain, baseManager, intelManager, blueprint, loca
         end
         if not bias then bias='Close' end
         local reference={}
+        if job.job.area=='Base' then
+            bias='BackClose'
+        end
         for _,v in reftable do
-            local refunits=AIUtils.GetOwnUnitsAroundPoint(self, v, region, 40, nil,nil, nil)
+            LOG('input into reftable is '..repr(v)..' pos is '..repr(region))
+            local refunits=AIUtils.GetOwnUnitsAroundPoint(self, v, region, 80, nil,nil, nil)
             table.insert(reference,refunits)
         end
         return reference, bias

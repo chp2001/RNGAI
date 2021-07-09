@@ -284,7 +284,7 @@ GameMap = Class({
         return {math.min(math.max(1,i),self.xNum), math.min(math.max(1,j),self.zNum)}
     end,
 
-    CanPathTo = function(self,pos0,pos1,layer)
+    CanPathTo2 = function(self,pos0,pos1,layer)
         local indices0 = self:GetIndices(pos0[1],pos0[3])
         local indices1 = self:GetIndices(pos1[1],pos1[3])
         return self.markers[indices0[1]][indices0[2]][layer].component == self.markers[indices1[1]][indices1[2]][layer].component

@@ -103,7 +103,7 @@ IntelManager = Class({
             if v.type == t then
                 local dist = VDist3(pos,v.position)
                 if dist < best and self:CanBuildOnMarker(v.position,bp)
-                               and MAP:CanPathTo(pos,v.position,"surf")
+                               and MAP:CanPathTo2(pos,v.position,"surf")
                                and self.brain.base:LocationIsClear(v.position,bp) then
                     best = dist
                     bestMarker = v
@@ -111,7 +111,19 @@ IntelManager = Class({
             end
         end
         PROFILER:Add("FindNearestEmptyMarker",PROFILER:Now()-start)
-        return bestMarker
+        return bestMarker, best
+    end,
+    DoesMarkerExist = function(self,t)
+        local start = PROFILER:Now()
+        local markers = ScenarioUtils.GetMarkers()
+        -- TODO: Support different kinds of pathing
+        for _, v in markers do
+            if v.type == t then
+                PROFILER:Add("DoesMarkerExist",PROFILER:Now()-start)
+                return true
+            end
+        end
+        PROFILER:Add("DoesMarkerExist",PROFILER:Now()-start)
     end,
     CanBuildOnMarker = function(self,pos)
         local alliedUnits = self.brain.aiBrain:GetUnitsAroundPoint(categories.STRUCTURE - categories.WALL,pos,0.2,'Ally')
@@ -126,7 +138,7 @@ IntelManager = Class({
         if enemyUnits and (table.getn(enemyUnits) > 0) then
             return false
         end
-        if not CanBuildStructureAt(self.brain.aiBrain, 'ueb1103', pos) then
+        if not CanBuildStructureAt(self.brain.aiBrain, 'ueb1103', pos) and not CanBuildStructureAt(self.brain.aiBrain, 'ueb1102', pos) then
             return false
         end
         return true
@@ -144,7 +156,7 @@ IntelManager = Class({
     end,
     GetNumAvailableMassPoints = function(self)
         if self.massNumCached then
-            return self.massNumCached
+            return self.massNum
         end
         local num = 0
         local markers = ScenarioUtils.GetMarkers()
@@ -155,6 +167,32 @@ IntelManager = Class({
         end
         self.massNumCached = true
         self.massNum = num
+        return num
+    end,
+    GetNumAvailableHydroPoints = function(self,allied)
+        if self.hydroNumCached then
+            return self.hydroNum
+        end
+        local num = 0
+        local markers = ScenarioUtils.GetMarkers()
+        for _, v in markers do
+            if v.type == "Hydrocarbon" and self:CanBuildOnMarker(v.position) then
+                if allied then
+                    local zone=self:FindZone(v.position)
+                    if zone.intel.class==ALLIED then
+                        num = num + 1
+                    elseif zone.intel.class==nil then
+                        if self:DoesMarkerExist("Hydrocarbon") then
+                            return 1
+                        end
+                    end
+                else
+                    num = num + 1
+                end
+            end
+        end
+        self.hydroNumCached = true
+        self.hydroNum = num
         return num
     end,
 
