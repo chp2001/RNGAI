@@ -6143,14 +6143,14 @@ Platoon = Class(RNGAIPlatoon) {
         end
     end,
     TruePlatoonRedoRNG = function(self)
-        local function GetWeightedHealthRatio(unit)
+        local function GetWeightedHealthRatio(unit)--health % including shields
             if unit.MyShield then
                 return (unit.MyShield:GetHealth()+unit:GetHealth())/(unit.MyShield:GetMaxHealth()+unit:GetMaxHealth())
             else
                 return unit:GetHealthPercent()
             end
         end
-        local function GetTrueHealth(unit,total)
+        local function GetTrueHealth(unit,total)--health+shieldhealth
             if total then
                 if unit.MyShield then
                     return (unit.MyShield:GetMaxHealth()+unit:GetMaxHealth())
@@ -6165,13 +6165,13 @@ Platoon = Class(RNGAIPlatoon) {
                 end
             end
         end
-        local function crossp(vec1,vec2,n)
+        local function crossp(vec1,vec2,n)--cross product
             local z = vec2[3] + n * (vec2[1] - vec1[1])
             local y = vec2[2] - n * (vec2[2] - vec1[2])
             local x = vec2[1] - n * (vec2[3] - vec1[3])
             return {x,y,z}
         end
-        local function midpoint(vec1,vec2,ratio)
+        local function midpoint(vec1,vec2,ratio)--midpoint,sort of- put 0.5 for halfway, higher or lower to get closer or further from the destination
             local vec3={}
             for z,v in vec1 do
                 if type(v)=='number' then 
@@ -6180,7 +6180,7 @@ Platoon = Class(RNGAIPlatoon) {
             end
             return vec3
         end
-        local function spreadmove(unitgroup,location)
+        local function spreadmove(unitgroup,location)--spreadmove! almost formation move, but not!
             local num=table.getn(unitgroup)
             local sum={0,0,0}
             for i,v in unitgroup do
@@ -6192,13 +6192,15 @@ Platoon = Class(RNGAIPlatoon) {
                     sum[k]=sum[k] + pos[k]/num
                 end
             end
-            local loc1=crossp(sum,location,-num/VDist3(sum,location))
-            local loc2=crossp(sum,location,num/VDist3(sum,location))
+            num=math.min(num,30)
+            local dist=VDist3(sum,location)
+            local loc1=crossp(sum,location,-num/dist)
+            local loc2=crossp(sum,location,num/dist)
             for i,v in unitgroup do
-                IssueMove({v},midpoint(loc1,loc2,i/num))
+                IssueMove({v},midpoint(v:GetPosition(),midpoint(loc1,loc2,i/num)),(dist-math.random(3))/dist)
             end
         end
-        local function UnitInitialize(self)
+        local function UnitInitialize(self)--do the unit initialization stuff!
             local platoon=self
             local platoonUnits=self:GetPlatoonUnits()
             local platoonthreat=0
@@ -6285,7 +6287,7 @@ Platoon = Class(RNGAIPlatoon) {
             self.mhealth=platoonhealthtotal
             self.rhealth=platoonhealth/platoonhealthtotal
         end
-        local function SimpleTarget(self,aiBrain,guardee)
+        local function SimpleTarget(self,aiBrain,guardee)--find enemies in a range and attack them- lots of complicated stuff here
             local function ViableTargetCheck(unit)
                 if unit.Dead or not unit then return false end
                 if self.MovementLayer=='Amphibious' then
@@ -6332,7 +6334,7 @@ Platoon = Class(RNGAIPlatoon) {
                 return true
             end
         end
-        local function SimpleEarlyPatrol(self,aiBrain)
+        local function SimpleEarlyPatrol(self,aiBrain)--basic raid function
             local mex=AIUtils.AIGetMarkerLocations(aiBrain, 'Mass')
             local raidlocs={}
             local platoon=self
@@ -6366,7 +6368,7 @@ Platoon = Class(RNGAIPlatoon) {
                 return false
             end
         end
-        local function SimpleRetreat(self,aiBrain)
+        local function SimpleRetreat(self,aiBrain)--basic retreat function
             local threat=RUtils.GrabPosDangerRNG(aiBrain,self:GetPlatoonPosition(),self.MaxWeaponRange+20)
             local platoon=self
             if threat.ally*1.2<threat.enemy then
@@ -6377,12 +6379,12 @@ Platoon = Class(RNGAIPlatoon) {
                 return false
             end
         end
-        local function SimpleDoRetreat(self,aiBrain,location)
+        local function SimpleDoRetreat(self,aiBrain,location)--basic "choose path and then start retreating" function
             local platoon=self
             if platoon.path and VDist3Sq(platoon.path[table.getn(platoon.path)],location)<20*20 then return end
             platoon.path=AIAttackUtils.PlatoonGenerateSafePathTo(aiBrain, self.MovementLayer, platoon.Pos, location, 1, 150,ScenarioInfo.size[1]*ScenarioInfo.size[2])
         end
-        local function VariableKite(self,unit,target)
+        local function VariableKite(self,unit,target)--basic kiting function.. complicated as heck
             local function KiteDist(pos1,pos2,distance,healthmod)
                 local vec={}
                 local dist=VDist3(pos1,pos2)
@@ -6439,7 +6441,7 @@ Platoon = Class(RNGAIPlatoon) {
                 return
             end
         end
-        local function SimpleCombat(self,aiBrain)
+        local function SimpleCombat(self,aiBrain)--fight stuff nearby
             local units=self:GetPlatoonUnits()
             for _,v in units do
                 if v.Dead or not v then continue end
@@ -6453,103 +6455,7 @@ Platoon = Class(RNGAIPlatoon) {
                 VariableKite(self,v,target)
             end
         end
-        local function SwitchState(self,state)
-            local states={
-                {'navigate',self.navigate},
-                {'combat',self.combat},
-                {'raid',self.raid},
-                {'push',self.push},
-                {'patrol',self.patrol},
-                {'garrison',self.garrison},
-                {'guard',self.guard},
-                {'acuhelp',self.acuhelp},
-            }
-            LOG('states before are '..repr(states))
-            if state=='navigate' then
-                self.navigate=true
-                self.combat=false
-                self.raid=false
-                self.push=false
-                self.patrol=false
-                self.garrison=false
-                self.guard=false
-                self.acuhelp=false
-            elseif state=='combat' then
-                self.navigate=false
-                self.combat=true
-                self.raid=false
-                self.push=false
-                self.patrol=false
-                self.garrison=false
-                self.guard=false
-                self.acuhelp=false
-            elseif state=='raid' then
-                self.navigate=false
-                self.combat=false
-                self.raid=true
-                self.push=false
-                self.patrol=false
-                self.garrison=false
-                self.guard=false
-                self.acuhelp=false
-            elseif state=='push' then
-                self.navigate=false
-                self.combat=false
-                self.raid=false
-                self.push=true
-                self.patrol=false
-                self.garrison=false
-                self.guard=false
-                self.acuhelp=false
-            elseif state=='patrol' then
-                self.navigate=false
-                self.combat=false
-                self.raid=false
-                self.push=false
-                self.patrol=true
-                self.garrison=false
-                self.guard=false
-                self.acuhelp=false
-            elseif state=='garrison' then
-                self.navigate=false
-                self.combat=false
-                self.raid=false
-                self.push=false
-                self.patrol=false
-                self.garrison=true
-                self.guard=false
-                self.acuhelp=false
-            elseif state=='guard' then
-                self.navigate=false
-                self.combat=false
-                self.raid=false
-                self.push=false
-                self.patrol=false
-                self.garrison=false
-                self.guard=true
-                self.acuhelp=false
-            elseif state=='acuhelp' then
-                self.navigate=false
-                self.combat=false
-                self.raid=false
-                self.push=false
-                self.patrol=false
-                self.garrison=false
-                self.guard=false
-                self.acuhelp=true
-            end
-            LOG('states after are '..repr({
-                {'navigate',self.navigate},
-                {'combat',self.combat},
-                {'raid',self.raid},
-                {'push',self.push},
-                {'patrol',self.patrol},
-                {'garrison',self.garrison},
-                {'guard',self.guard},
-                {'acuhelp',self.acuhelp},
-            }))
-        end
-        local function SimplePriority(self,aiBrain)
+        local function SimplePriority(self,aiBrain)--use the aibrain priority table to do things
             --local prioritypoints1={}
             local prioritypoints=table.copy(aiBrain.prioritypoints)
             local n=0
@@ -6609,7 +6515,7 @@ Platoon = Class(RNGAIPlatoon) {
                 end
             end
         end
-        local function DistancePredict(target,time)
+        local function DistancePredict(target,time)--predict where a unit is going to be in x time
             local vel={}
             vel[1],vel[2],vel[3]=target:GetVelocity()
             local pos=target:GetPosition()
@@ -6619,7 +6525,7 @@ Platoon = Class(RNGAIPlatoon) {
             end
             return dest
         end
-        local function AggressivelyCircle(self,unit,location,radius)
+        local function AggressivelyCircle(self,unit,location,radius)--circle around something
             local dist=VDist3(unit:GetPosition(),location)
             local dest=crossp(unit:GetPosition(),location,radius/dist)
             if RUtils.CanGraphToRNGArea(unit,dest,self.MovementLayer) then
@@ -6630,7 +6536,7 @@ Platoon = Class(RNGAIPlatoon) {
                 IssueMove({unit},location)
             end
         end
-        local function SimpleGuard(self,aiBrain,unit)
+        local function SimpleGuard(self,aiBrain,unit)--supposed to help guard things- not sure if it works
             local platoon=self
             if SimpleTarget(self,aiBrain,unit) then
                 SimpleCombat(self,aiBrain)
@@ -6688,7 +6594,7 @@ Platoon = Class(RNGAIPlatoon) {
             local spread=0
             local snum=0
             platoon.clumpmode=false
-            if platoon.clumpmode then
+            if platoon.clumpmode then--this is for clumping- it works well sometimes, bad other times. formation substitute. doesn't work that great recently- need to fix sometime
                 for _,v in platoonUnits do
                     if not v or v.Dead then continue end
                     if VDist3Sq(v:GetPosition(),platoon.Pos)>v.MaxWeaponRange/5*v.MaxWeaponRange/5+platoonNum*platoonNum then
@@ -6698,11 +6604,11 @@ Platoon = Class(RNGAIPlatoon) {
                         snum=snum+1
                     end
                 end
-                if spread>4 then
+                if spread>4 then--how much delay are we going to wait to fix?
                     WaitTicks(math.ceil(math.sqrt(spread/platoonNum+10)))
                 end
             end
-            local alliedmexes=table.copy(aiBrain:GetListOfUnits(categories.MASSEXTRACTION + categories.ENGINEER, false, true))
+            local alliedmexes=table.copy(aiBrain:GetListOfUnits(categories.MASSEXTRACTION + categories.ENGINEER, false, true))--decide where we are retreating to
             local closestmex=nil
             if alliedmexes[1] then
                 table.sort(alliedmexes,function(k1,k2) return VDist3Sq(k1:GetPosition(),platoon.Pos)<VDist3Sq(k2:GetPosition(),platoon.Pos) end)
@@ -6718,15 +6624,15 @@ Platoon = Class(RNGAIPlatoon) {
             else 
                 platoon.home=platoon.base
             end
-            if SimpleRetreat(self,aiBrain) then
+            if SimpleRetreat(self,aiBrain) then--retreat if we feel like it
                 SimpleDoRetreat(self,aiBrain,platoon.home)
-            elseif SimplePriority(self,aiBrain) then
-            elseif SimpleTarget(self,aiBrain) then
+            elseif SimplePriority(self,aiBrain) then--do priority stuff next
+            elseif SimpleTarget(self,aiBrain) then--do combat stuff
                 SimpleCombat(self,aiBrain)
                 WaitTicks(10)
-            elseif SimpleEarlyPatrol(self,aiBrain) then
+            elseif SimpleEarlyPatrol(self,aiBrain) then--do raid stuff
             else
-                SimpleGuard(self,aiBrain,closestmex)
+                SimpleGuard(self,aiBrain,closestmex)--guard stuff with nearest mex
             end
             if not PlatoonExists(aiBrain, self) then
                 return
@@ -6933,15 +6839,15 @@ Platoon = Class(RNGAIPlatoon) {
                 platoon.dest={platoon.path[3][1]+math.random(-4,4),platoon.path[3][2],platoon.path[3][3]+math.random(-4,4)}
                 self:MoveToLocation(platoon.dest,false)
                 IssueClearCommands(supportsquad)
-                if not formd then
-                    IssueFormMove(supportsquad, platoon.dest, 'AttackFormation', GetAngleCCW(platoon.Pos,platoon.dest))
-                    formd=true
-                else
+               -- if not formd then
+                    --IssueFormMove(supportsquad, platoon.dest, 'AttackFormation', GetAngleCCW(platoon.Pos,platoon.dest))
+                    --formd=true
+                --else
                     spreadmove(supportsquad,midpoint(platoon.path[1],platoon.path[2],0.2))
                     spreadmove(scouts,midpoint(platoon.path[1],platoon.path[2],0.15))
                     spreadmove(aa,midpoint(platoon.path[1],platoon.path[2],0.1))
-                    formd=false
-                end
+                    --formd=false
+                --end
             else
                 platoon.dest={platoon.path[table.getn(platoon.path)][1]+math.random(-4,4),platoon.path[table.getn(platoon.path)][2],platoon.path[table.getn(platoon.path)][3]+math.random(-4,4)}
                 self:MoveToLocation(platoon.dest,false)
@@ -6960,162 +6866,6 @@ Platoon = Class(RNGAIPlatoon) {
             WaitTicks(10)
             WaitTicks(15)
             continue
-        end
-    end,
-    PriorityHandler = function(self)
-        LOG('beginning prioritypoints')
-        if self.prioritytaken then return end
-        self.prioritytaken=true
-        local function SwitchState(self,state)
-            local states={
-                {'navigate',self.navigate},
-                {'combat',self.combat},
-                {'raid',self.raid},
-                {'push',self.push},
-                {'patrol',self.patrol},
-                {'garrison',self.garrison},
-                {'guard',self.guard},
-                {'acuhelp',self.acuhelp},
-            }
-            LOG('states before are '..repr(states))
-            if state=='navigate' then
-                self.navigate=true
-                self.combat=false
-                self.raid=false
-                self.push=false
-                self.patrol=false
-                self.garrison=false
-                self.guard=false
-                self.acuhelp=false
-            elseif state=='combat' then
-                self.navigate=false
-                self.combat=true
-                self.raid=false
-                self.push=false
-                self.patrol=false
-                self.garrison=false
-                self.guard=false
-                self.acuhelp=false
-            elseif state=='raid' then
-                self.navigate=false
-                self.combat=false
-                self.raid=true
-                self.push=false
-                self.patrol=false
-                self.garrison=false
-                self.guard=false
-                self.acuhelp=false
-            elseif state=='push' then
-                self.navigate=false
-                self.combat=false
-                self.raid=false
-                self.push=true
-                self.patrol=false
-                self.garrison=false
-                self.guard=false
-                self.acuhelp=false
-            elseif state=='patrol' then
-                self.navigate=false
-                self.combat=false
-                self.raid=false
-                self.push=false
-                self.patrol=true
-                self.garrison=false
-                self.guard=false
-                self.acuhelp=false
-            elseif state=='garrison' then
-                self.navigate=false
-                self.combat=false
-                self.raid=false
-                self.push=false
-                self.patrol=false
-                self.garrison=true
-                self.guard=false
-                self.acuhelp=false
-            elseif state=='guard' then
-                self.navigate=false
-                self.combat=false
-                self.raid=false
-                self.push=false
-                self.patrol=false
-                self.garrison=false
-                self.guard=true
-                self.acuhelp=false
-            elseif state=='acuhelp' then
-                self.navigate=false
-                self.combat=false
-                self.raid=false
-                self.push=false
-                self.patrol=false
-                self.garrison=false
-                self.guard=false
-                self.acuhelp=true
-            end
-            LOG('states after are '..repr({
-                {'navigate',self.navigate},
-                {'combat',self.combat},
-                {'raid',self.raid},
-                {'push',self.push},
-                {'patrol',self.patrol},
-                {'garrison',self.garrison},
-                {'guard',self.guard},
-                {'acuhelp',self.acuhelp},
-            }))
-        end
-        local aiBrain = self:GetBrain()
-        local platoon=self
-        while PlatoonExists(aiBrain,platoon) do
-            local prioritypoints={}
-            local n=0
-            for _,v in aiBrain.prioritypoints do
-                n=n+1
-                table.insert(prioritypoints,v)
-                --LOG('type'..repr(v.type))
-            end
-            if not prioritypoints or n==0 then
-                LOG('no prioritypoints..skipping')
-                WaitSeconds(2)
-                continue
-            end
-            table.sort(prioritypoints,
-                function(a,b)
-                    local mod1=0
-                    local mod2=0
-                    if a.danger then mod1=a.danger end
-                    if b.danger then mod2=b.danger end
-                    return a.priority/(math.max(VDist3Sq(self.Pos,a.Position),30*30)+mod1)>b.priority/(math.max(VDist3Sq(self.Pos,b.Position),30*30)+mod2)
-                end)
-            local point=prioritypoints[1]
-            if not self.combat and not self.retreat then
-                LOG('prioritypoints '..repr(point.type))
-                if point.type then
-                    LOG('switching to state '..repr(point.type))
-                end
-                if point.type=='push' then
-                    --SwitchState(platoon,'push')
-                    platoon.dest=point.Position
-                elseif point.type=='raid' then
-                    if platoon.raid then
-                        if platoon.path and VDist3Sq(platoon.path[table.getn(platoon.path)],point.Position)>400 then
-                            platoon.path=AIAttackUtils.PlatoonGenerateSafePathTo(aiBrain, self.MovementLayer, platoon.Pos, platoon.rdest, 1, 150,ScenarioInfo.size[1]*ScenarioInfo.size[2])
-                        end
-                    end
-                    --SwitchState(platoon,'raid')
-                    --platoon.dest=point.Position
-                    platoon.rdest=point.Position
-                    platoon.raidunit=point.unit
-                elseif point.type=='garrison' then
-                    --SwitchState(platoon,'garrison')
-                    platoon.dest=point.Position
-                elseif point.type=='guard' then
-                    --SwitchState(platoon,'guard')
-                    platoon.guard=point.unit
-                elseif point.type=='acuhelp' then
-                    --SwitchState(platoon,'acuhelp')
-                    platoon.guard=point.unit
-                end
-            end
-            WaitSeconds(2)
         end
     end,
     HighlightTruePlatoon = function(self)
