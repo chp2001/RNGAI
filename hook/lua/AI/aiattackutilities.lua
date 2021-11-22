@@ -204,9 +204,7 @@ function PlatoonGenerateSafePathToRNG(aiBrain, platoonLayer, start, destination,
     optThreatWeight = optThreatWeight or 1
     local finalPath = {}
 
-    --If we are within 100 units of the destination, don't bother pathing. (Sorian and Duncan AI)
-    if (aiBrain.Sorian or aiBrain.Duncan) and (VDist2Sq(start[1], start[3], destination[1], destination[3]) <= 10000
-    or (testPathDist and VDist2Sq(start[1], start[3], destination[1], destination[3]) <= testPathDist)) then
+    if testPathDist and VDist2Sq(start[1], start[3], destination[1], destination[3]) <= testPathDist then
         RNGINSERT(finalPath, destination)
         return finalPath
     end
@@ -238,6 +236,50 @@ function PlatoonGenerateSafePathToRNG(aiBrain, platoonLayer, start, destination,
     RNGINSERT(finalPath, destination)
 
     return finalPath, false, path.totalThreat
+end
+
+function PlatoonGeneratePathToRNG(aiBrain, platoonLayer, start, destination, optMaxMarkerDist, testPathDist)
+    -- if we don't have markers for the platoonLayer, then we can't build a path.
+    if not GetPathGraphs()[platoonLayer] then
+        return false, 'NoGraph'
+    end
+    local location = start
+    optMaxMarkerDist = optMaxMarkerDist or 250
+    local finalPath = {}
+
+    --If we are within 100 units of the destination, don't bother pathing. (Sorian and Duncan AI)
+    if (testPathDist and VDist2Sq(start[1], start[3], destination[1], destination[3]) <= testPathDist) then
+        RNGINSERT(finalPath, destination)
+        return finalPath
+    end
+
+    --Get the closest path node at the platoon's position
+    local startNode
+
+    startNode = GetClosestPathNodeInRadiusByLayer(location, optMaxMarkerDist, platoonLayer)
+    if not startNode then return false, 'NoStartNode' end
+
+    --Get the matching path node at the destiantion
+    local endNode
+
+    endNode = GetClosestPathNodeInRadiusByGraph(destination, optMaxMarkerDist, startNode.graphName)
+    if not endNode then return false, 'NoEndNode' end
+
+    --Generate the safest path between the start and destination
+    local path
+    path = GeneratePathNoThreatRNG(aiBrain, startNode, endNode, destination, location, platoonLayer)
+
+    if not path then return false, 'NoPath' end
+    -- Insert the path nodes (minus the start node and end nodes, which are close enough to our start and destination) into our command queue.
+    for i,node in path.path do
+        if i > 1 and i < table.getn(path.path) then
+            RNGINSERT(finalPath, node.position)
+        end
+    end
+
+    RNGINSERT(finalPath, destination)
+
+    return finalPath, false
 end
 
 function GeneratePathRNG(aiBrain, startNode, endNode, threatType, threatWeight, endPos, startPos, platoonLayer)
@@ -388,7 +430,11 @@ function GetPathGraphsRNG()
     if ScenarioInfo.PathGraphsRNG then
         return ScenarioInfo.PathGraphsRNG
     else
-        ScenarioInfo.PathGraphsRNG = {}
+        if ScenarioInfo.MarkersInfectedRNG then
+            ScenarioInfo.PathGraphsRNG = {}
+        else 
+            return false
+        end
     end
 
     local markerGroups = {
@@ -422,6 +468,9 @@ function GetClosestPathNodeInRadiusByLayerRNG(location, radius, layer)
     local bestMarker = false
 
     local graphTable =  GetPathGraphsRNG()[layer]
+    if graphTable == false then
+        return false
+    end
 
     if graphTable then
         for name, graph in graphTable do
@@ -809,7 +858,7 @@ function GeneratePathNoThreatRNG(aiBrain, startNode, endNode, endPos, startPos)
         end
     end
     -- At this point we have not found any path to the destination.
-    -- The path is to dangerous at the moment (or there is no path at all). We will check this again in 30 seconds.
+    -- We will check this again in 30 seconds.
     return false
 end
 
@@ -885,25 +934,13 @@ function FindSafeDropZoneWithPathRNG(aiBrain, platoon, markerTypes, markerrange,
         --LOG('stest is '..stest..'atest is '..atest)
 
         if stest <= threatMax and atest <= airthreatMax then
-        
             --LOG("*AI DEBUG "..aiBrain.Nickname.." FINDSAFEDROP for "..repr(destination).." is testing "..repr(v.Position).." "..v.Name)
             --LOG("*AI DEBUG "..aiBrain.Nickname.." "..platoon.BuilderName.." Position "..repr(v.Position).." says Surface threat is "..stest.." vs "..threatMax.." and Air threat is "..atest.." vs "..airthreatMax )
             --LOG("*AI DEBUG "..aiBrain.Nickname.." "..platoon.BuilderName.." drop distance is "..repr( VDist3(destination, v.Position) ) )
-
             -- can the platoon path safely from this marker to the final destination 
             if CanGraphToRNG(v.Position, destination, layer) then
                 return v.Position, v.Name
             end
-            --[[local landpath, reason = PlatoonGenerateSafePathToRNG(aiBrain, layer, v.Position, destination, threatMax, 160 )
-            if not landpath then
-                --LOG('No path to transport location from selected position')
-            end
-
-            -- can the transports reach that marker ?
-            if landpath then
-                --LOG('Selected Position')
-                return v.Position, v.Name
-            end]]
         end
     end
     --LOG('Safe landing Location returning false')

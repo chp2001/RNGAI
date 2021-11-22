@@ -29,10 +29,6 @@ BaseBuilderTemplate {
                 'RNGAI ScoutLandFormer',
                 'RNGAI Land FormBuilders Expansion',
 
-                -- Air Unit Formers --
-                'RNGAI Air Platoon Builder',
-                
-        
                 -- Land Factory Builders --
                 --'RNGAI Factory Builder Land',
         
